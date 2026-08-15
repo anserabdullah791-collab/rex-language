@@ -1,0 +1,153 @@
+{
+  "name": "rex-language",
+  "displayName": "Rex Programming Language",
+  "description": "The World's #1 Simplest Programming Language \u2014 Just Write English. Syntax highlighting, code completion, snippets, and live server for .rex and .rexweb files.",
+  "version": "5.0.0",
+  "publisher": "digitalcreators",
+  "author": {
+    "name": "Abdullah Anser & Box",
+    "url": "https://github.com/digitalcreators"
+  },
+  "license": "MIT",
+  "icon": "images/rex-icon.png",
+  "engines": {
+    "vscode": "^1.60.0"
+  },
+  "categories": [
+    "Programming Languages",
+    "Snippets",
+    "Other"
+  ],
+  "keywords": [
+    "rex",
+    "simple",
+    "programming",
+    "language",
+    "urdu",
+    "web"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/digitalcreators/rex-language"
+  },
+  "activationEvents": [
+    "onLanguage:rex",
+    "onLanguage:rexweb",
+    "onCommand:rex.run",
+    "onCommand:rex.runWeb",
+    "onCommand:rex.serve"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "languages": [
+      {
+        "id": "rex",
+        "aliases": [
+          "Rex",
+          "rex"
+        ],
+        "extensions": [
+          ".rex"
+        ],
+        "configuration": "./language-configuration.json",
+        "icon": {
+          "light": "./images/rex-file.svg",
+          "dark": "./images/rex-file.svg"
+        }
+      },
+      {
+        "id": "rexweb",
+        "aliases": [
+          "Rex Web",
+          "rexweb"
+        ],
+        "extensions": [
+          ".rexweb"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "rex",
+        "scopeName": "source.rex",
+        "path": "./syntaxes/rex.tmLanguage.json"
+      },
+      {
+        "language": "rexweb",
+        "scopeName": "source.rexweb",
+        "path": "./syntaxes/rex.tmLanguage.json"
+      }
+    ],
+    "snippets": [
+      {
+        "language": "rex",
+        "path": "./snippets/rex.json"
+      },
+      {
+        "language": "rexweb",
+        "path": "./snippets/rex.json"
+      }
+    ],
+    "commands": [
+      {
+        "command": "rex.run",
+        "title": "Rex: Run File",
+        "category": "Rex"
+      },
+      {
+        "command": "rex.runWeb",
+        "title": "Rex: Convert RexWeb to HTML",
+        "category": "Rex"
+      },
+      {
+        "command": "rex.serve",
+        "title": "Rex: Start Live Server",
+        "category": "Rex"
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "rex.run",
+          "when": "resourceLangId == rex",
+          "group": "rex"
+        },
+        {
+          "command": "rex.runWeb",
+          "when": "resourceLangId == rexweb",
+          "group": "rex"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "rex.run",
+        "key": "ctrl+shift+r",
+        "mac": "cmd+shift+r",
+        "when": "resourceLangId == rex"
+      }
+    ],
+    "configuration": {
+      "title": "Rex",
+      "properties": {
+        "rex.nodePath": {
+          "type": "string",
+          "default": "node",
+          "description": "Path to Node.js executable"
+        },
+        "rex.serverPort": {
+          "type": "number",
+          "default": 8000,
+          "description": "Port for Rex Live Server"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.60.0"
+  }
+}

@@ -1,0 +1,26 @@
+page
+  header
+    heading "My Website"
+    subtitle "Built with Rex — zero CSS written!"
+  end
+
+  card
+    heading "About Me"
+    paragraph "This entire page has no CSS and no JS written by me. Rex auto-created everything."
+    button "Click Me"
+  end
+
+  card
+    heading "Features"
+    list
+      item "Auto-styled by Rex"
+      item "No CSS needed"
+      item "No JS needed"
+      item "Just write structure"
+    end
+  end
+
+  footer
+    paragraph "Powered by Rex v5.0"
+  end
+end

@@ -1,0 +1,131 @@
+{
+  "Print": {
+    "prefix": "p",
+    "body": "p ${1:text}",
+    "description": "Print text (no quotes needed)"
+  },
+  "Print variable": {
+    "prefix": "pv",
+    "body": "p {${1:variable}}",
+    "description": "Print variable value"
+  },
+  "Variable": {
+    "prefix": "var",
+    "body": "${1:name} = ${2:value}",
+    "description": "Variable assignment"
+  },
+  "If": {
+    "prefix": "if",
+    "body": [
+      "if ${1:condition}",
+      "  ${2:body}",
+      "end"
+    ],
+    "description": "If condition"
+  },
+  "If Else": {
+    "prefix": "ife",
+    "body": [
+      "if ${1:condition}",
+      "  ${2:body}",
+      "else",
+      "  ${3:else body}",
+      "end"
+    ],
+    "description": "If-else condition"
+  },
+  "While": {
+    "prefix": "while",
+    "body": [
+      "while ${1:condition}",
+      "  ${2:body}",
+      "end"
+    ],
+    "description": "While loop"
+  },
+  "Repeat": {
+    "prefix": "repeat",
+    "body": [
+      "repeat ${1:count}",
+      "  ${2:body}",
+      "end"
+    ],
+    "description": "Repeat loop"
+  },
+  "Each": {
+    "prefix": "each",
+    "body": [
+      "each ${1:item} in ${2:list}",
+      "  ${3:body}",
+      "end"
+    ],
+    "description": "Each loop"
+  },
+  "Function": {
+    "prefix": "func",
+    "body": [
+      "func ${1:name}(${2:params})",
+      "  ${3:body}",
+      "end"
+    ],
+    "description": "Define function"
+  },
+  "Try Catch": {
+    "prefix": "try",
+    "body": [
+      "try",
+      "  ${1:risky code}",
+      "catch",
+      "  ${2:handle error}",
+      "end"
+    ],
+    "description": "Try-catch block"
+  },
+  "List": {
+    "prefix": "list",
+    "body": "[${1:items}]",
+    "description": "List literal"
+  },
+  "RexWeb Page": {
+    "prefix": "page",
+    "body": [
+      "page",
+      "  header",
+      "    heading \"${1:Title}\"",
+      "  end",
+      "  container",
+      "    card",
+      "      paragraph \"${2:Content}\"",
+      "    end",
+      "  end",
+      "end",
+      "",
+      "style",
+      "body: color: white, font-family: Arial",
+      "end",
+      "",
+      "script",
+      "func ${3:hello}()",
+      "end"
+    ],
+    "description": "Full RexWeb page template"
+  },
+  "RexWeb Style": {
+    "prefix": "style",
+    "body": [
+      "style",
+      "${1:selector}: ${2:property}: ${3:value}",
+      "end"
+    ],
+    "description": "RexWeb style block"
+  },
+  "RexWeb Script": {
+    "prefix": "script",
+    "body": [
+      "script",
+      "func ${1:name}()",
+      "end"
+    ],
+    "description": "RexWeb script block"
+  }
+}

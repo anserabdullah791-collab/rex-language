@@ -1,0 +1,75 @@
+# Rex Web Demo — A full web page in Rex syntax
+# This file (.rexweb) converts to HTML + CSS + JavaScript
+
+# === PAGE STRUCTURE (like HTML, but simpler) ===
+page
+  header
+    heading "Welcome to Rex"
+    subtitle "The World's #1 Simplest Language"
+  end
+
+  container
+    card
+      heading "Why Rex?"
+      paragraph "Rex is so simple that anyone can code. No semicolons, no brackets, just English."
+      paragraph "p Hello World prints Hello World. That's it."
+    end
+
+    card
+      heading "Features"
+      list
+        item "Ultra-short: p Hello (no quotes!)"
+        item "Variables: just x = 10"
+        item "Conditions: if x > 5"
+        item "Loops: repeat 3 or while x < 10"
+        item "Functions: func name()"
+        item "Web: Rex markup → HTML"
+        item "Style: Rex style → CSS"
+        item "Logic: Rex script → JavaScript"
+      end
+    end
+
+    card
+      heading "Try It"
+      paragraph "Click the button below:"
+      button "Click Me" click: sayHello()
+    end
+  end
+
+  footer
+    paragraph "Created with Rex v5.0 by Abdullah Anser"
+  end
+end
+
+# === STYLES (like CSS, but simpler) ===
+style
+body: background: linear-gradient(135deg, #0f0c29, #302b63, #24243e), color: white, font-family: Arial
+
+header: text-align: center, padding: 40px, background: rgba(0,0,0,0.3), border-radius: 15px, margin: 20px
+
+container: max-width: 900px, margin: 0 auto, padding: 20px, display: flex, flex-direction: column, gap: 20px
+
+card: background: rgba(255,255,255,0.05), backdrop: blur(10px), border: 1px solid rgba(255,255,255,0.1), border-radius: 15px, padding: 25px, margin: 10px
+
+heading: color: #64f3d1, font-size: 28px
+
+subtitle: color: #aaa, font-size: 18px, text-align: center
+
+paragraph: color: #ddd, line-height: 1.6, font-size: 16px
+
+list: color: #ddd, padding: 10px
+
+item: margin: 8px, color: #ccc
+
+button: background: #0f3460, color: white, border: none, padding: 15px 30px, border-radius: 8px, font-size: 16px, cursor: pointer, transition: 0.3s
+button:hover: background: #533483, transform: scale(1.05)
+
+footer: text-align: center, padding: 30px, color: #666
+end
+
+# === LOGIC (like JavaScript, but simpler) ===
+script
+func sayHello()
+  alert("Hello from Rex! This is the brain of the page.")
+end
+end

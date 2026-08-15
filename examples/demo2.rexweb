@@ -1,0 +1,35 @@
+page
+  header
+    heading "Welcome to Rex"
+    subtitle "No commas. No quotes. Just English."
+  end
+
+  card
+    heading "Why Rex?"
+    paragraph "Rex is so simple anyone can code. Just write English."
+    button "Click Me" click: sayHello()
+  end
+
+  card
+    heading "Features"
+    list
+      item "Ultra-short: p Hello"
+      item "No commas in CSS"
+      item "Auto-styled: Rex makes it beautiful"
+    end
+  end
+end
+
+style
+body: background: #1a1a2e color: white font: Arial
+card: background: rgba(255,255,255,0.05) radius: 15px padding: 25px
+heading: color: #64f3d1 size: 28px
+button: background: #0f3460 color: white padding: 12px 30px
+button:hover: background: #533483 transform: scale(1.05)
+end
+
+script
+func sayHello()
+  alert("Hello from Rex! No commas needed!")
+end
+end

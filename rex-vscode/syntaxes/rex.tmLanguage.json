@@ -1,0 +1,88 @@
+{
+  "scopeName": "source.rex",
+  "patterns": [
+    { "include": "#comments" },
+    { "include": "#keywords" },
+    { "include": "#p-command" },
+    { "include": "#strings" },
+    { "include": "#numbers" },
+    { "include": "#functions" },
+    { "include": "#variables" },
+    { "include": "#operators" }
+  ],
+  "repository": {
+    "comments": {
+      "name": "comment.line.number-sign.rex",
+      "match": "#.*$"
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "keyword.control.rex",
+          "match": "\\b(if|agar|when|else|warna|otherwise|repeat|dohra|loop|while|jab|each|har|for|break|tootta|stop|skip|agla|next|continue|try|catch|end|khatam|done|then|in|is|times|baar|tak)\\b"
+        },
+        {
+          "name": "keyword.other.rex",
+          "match": "\\b(func|kaam|function|def|return|wapis|give|print|show|say|dikha|p|ask|lo|input|get)\\b"
+        },
+        {
+          "name": "constant.language.boolean.rex",
+          "match": "\\b(true|sahi|yes|false|galat|no|null|khaali|nothing|none)\\b"
+        },
+        {
+          "name": "keyword.operator.logical.rex",
+          "match": "\\b(and|aur|or|ya|not|nahi)\\b"
+        }
+      ]
+    },
+    "p-command": {
+      "match": "^\\s*p\\s+",
+      "name": "keyword.other.print.rex",
+      "captures": {
+        "0": { "name": "keyword.other.print-short.rex" }
+      }
+    },
+    "strings": {
+      "patterns": [
+        {
+          "name": "string.quoted.double.rex",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "variable.interpolation.rex",
+              "match": "\\{[^}]+\\}"
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.rex",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "variable.interpolation.rex",
+              "match": "\\{[^}]+\\}"
+            }
+          ]
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.rex",
+      "match": "\\b\\d+\\.?\\d*\\b"
+    },
+    "functions": {
+      "name": "entity.name.function.rex",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*(?=\\()"
+    },
+    "variables": {
+      "name": "variable.other.rex",
+      "match": "\\b[a-zA-Z_][a-zA-Z0-9_]*\\b"
+    },
+    "operators": {
+      "name": "keyword.operator.rex",
+      "match": "(\\+|-|\\*|/|%|\\^|=|==|!=|<|>|<=|>=)"
+    }
+  }
+}
