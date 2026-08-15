@@ -1,0 +1,49 @@
+{
+  "name": "rex-lang",
+  "version": "5.0.0",
+  "description": "Rex (ریکس) — The World's Simplest Programming Language. No semicolons, no brackets, no quotes. Just write English or Urdu.",
+  "main": "rex.js",
+  "bin": {
+    "rex": "./bin/rex.js"
+  },
+  "scripts": {
+    "test": "node bin/rex.js test",
+    "start": "node bin/rex.js repl",
+    "serve": "node bin/rex.js serve .",
+    "web": "node bin/rex.js web"
+  },
+  "keywords": [
+    "rex",
+    "programming-language",
+    "language",
+    "simple",
+    "urdu",
+    "english",
+    "web",
+    "interpreter",
+    "compiler",
+    "beginner",
+    "education",
+    "rex-lang"
+  ],
+  "author": "Abdullah Anser <anserabdullah159@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/anserabdullah791-collab/rex-language",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anserabdullah791-collab/rex-language.git"
+  },
+  "bugs": {
+    "url": "https://github.com/anserabdullah791-collab/rex-language/issues"
+  },
+  "engines": {
+    "node": ">=12.0.0"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "examples/",
+    "README.md",
+    "LICENSE"
+  ]
+}
