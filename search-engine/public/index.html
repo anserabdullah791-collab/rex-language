@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rex Search — The Fast Search Engine</title>
+<title>Rex Search — Search Without Surveillance</title>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -14,7 +14,65 @@ body {
   min-height: 100vh;
 }
 
-/* Logo and search on homepage */
+/* Top bar */
+.topbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  z-index: 100;
+}
+
+.signin-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #e8e8e8;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.signin-btn:hover {
+  background: rgba(255,255,255,0.08);
+  border-color: rgba(0,212,255,0.3);
+}
+
+.signin-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* User avatar (after sign-in) */
+.user-avatar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 20px;
+  cursor: pointer;
+}
+
+.user-avatar img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+}
+
+.user-avatar span {
+  font-size: 14px;
+  color: #e8e8e8;
+}
+
+/* Homepage */
 .home {
   display: flex;
   flex-direction: column;
@@ -42,15 +100,42 @@ body {
 
 .tagline {
   color: #666;
+  font-size: 15px;
+  margin-bottom: 30px;
+}
+
+/* Search type tabs */
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.tab {
+  padding: 8px 20px;
   font-size: 14px;
-  margin-bottom: 40px;
+  color: #888;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.tab:hover { color: #ccc; }
+
+.tab.active {
+  background: linear-gradient(135deg, #00d4ff, #0066ff);
+  color: #fff;
 }
 
 .search-box {
   width: 100%;
   max-width: 600px;
   display: flex;
-  gap: 0;
 }
 
 .search-input {
@@ -84,35 +169,40 @@ body {
   transition: all 0.3s;
 }
 
-.search-btn:hover {
-  opacity: 0.9;
-  transform: scale(1.02);
-}
+.search-btn:hover { opacity: 0.9; transform: scale(1.02); }
 
-.stats {
+.privacy-badges {
   margin-top: 30px;
-  color: #444;
-  font-size: 13px;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.stats a {
-  color: #00d4ff;
-  text-decoration: none;
+.badge {
+  padding: 6px 14px;
+  font-size: 12px;
+  color: #888;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 20px;
 }
 
-/* Results page */
+.badge::before { content: "✓ "; color: #00d4ff; }
+
+/* Results Page */
 .results-page {
-  max-width: 700px;
+  max-width: 750px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 70px 20px 20px;
 }
 
 .results-header {
   display: flex;
   align-items: center;
   gap: 15px;
-  margin-bottom: 30px;
-  padding-bottom: 20px;
+  margin-bottom: 10px;
+  padding-bottom: 12px;
   border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
@@ -126,15 +216,17 @@ body {
   display: flex;
 }
 
-.results-search .search-input {
-  font-size: 14px;
-  padding: 10px 16px;
+.results-search .search-input { font-size: 14px; padding: 10px 16px; }
+.results-search .search-btn { padding: 10px 20px; font-size: 14px; }
+
+/* Results tabs */
+.results-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
 }
 
-.results-search .search-btn {
-  padding: 10px 20px;
-  font-size: 14px;
-}
+.results-tabs .tab { font-size: 13px; padding: 6px 16px; }
 
 .results-meta {
   color: #666;
@@ -142,10 +234,17 @@ body {
   margin-bottom: 20px;
 }
 
-.results-meta .time {
+.results-meta .time { color: #00d4ff; }
+.results-meta .source-badge {
+  margin-left: 10px;
+  font-size: 11px;
+  padding: 2px 8px;
+  background: rgba(0,212,255,0.08);
+  border-radius: 4px;
   color: #00d4ff;
 }
 
+/* Web results */
 .result-item {
   padding: 15px 0;
   border-bottom: 1px solid rgba(255,255,255,0.03);
@@ -160,10 +259,17 @@ body {
   gap: 8px;
 }
 
-.result-domain {
-  color: #666;
-  font-size: 11px;
+.result-domain { color: #666; font-size: 11px; }
+
+.result-source {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 3px;
 }
+
+.result-source[data-source="DuckDuckGo"] { background: rgba(255,128,0,0.1); color: #ff8800; }
+.result-source[data-source="Bing"] { background: rgba(0,100,255,0.1); color: #4a9eff; }
+.result-source[data-source="Google"] { background: rgba(0,255,100,0.1); color: #00ff64; }
 
 .result-title {
   font-size: 18px;
@@ -174,43 +280,150 @@ body {
   transition: color 0.2s;
 }
 
-.result-title:hover {
-  color: #00d4ff;
+.result-title:hover { color: #00d4ff; }
+
+.result-desc { font-size: 14px; color: #999; line-height: 1.5; }
+
+/* Image results grid */
+.image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
 }
 
-.result-desc {
-  font-size: 14px;
-  color: #999;
-  line-height: 1.5;
-}
-
-.result-score {
-  display: inline-block;
-  font-size: 10px;
-  color: #444;
-  margin-top: 4px;
-  padding: 2px 8px;
+.image-card {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
   background: rgba(255,255,255,0.03);
-  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s;
 }
 
-.no-results {
-  text-align: center;
-  padding: 60px 20px;
-  color: #666;
+.image-card:hover {
+  transform: scale(1.03);
+  box-shadow: 0 4px 20px rgba(0,212,255,0.15);
 }
 
-.no-results h3 {
+.image-card img {
+  width: 100%;
+  height: 160px;
+  object-fit: cover;
+  display: block;
+}
+
+.image-card .img-info {
+  padding: 8px 10px;
+}
+
+.image-card .img-title {
+  font-size: 12px;
   color: #999;
-  margin-bottom: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.loading {
-  text-align: center;
-  padding: 40px;
-  color: #666;
+.image-card .img-source {
+  font-size: 10px;
+  color: #555;
+  margin-top: 2px;
 }
 
+.image-card .img-badge {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  font-size: 9px;
+  padding: 2px 6px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 4px;
+  color: #aaa;
+}
+
+/* Video results */
+.video-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.video-card {
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.03);
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.video-card:hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 20px rgba(0,212,255,0.15);
+}
+
+.video-thumb {
+  position: relative;
+  width: 100%;
+  height: 160px;
+  background: #111;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.video-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.video-thumb .play-icon {
+  position: absolute;
+  width: 50px;
+  height: 50px;
+  background: rgba(0,0,0,0.7);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: #fff;
+}
+
+.video-thumb .duration {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 11px;
+  padding: 2px 6px;
+  background: rgba(0,0,0,0.8);
+  border-radius: 4px;
+  color: #fff;
+}
+
+.video-info { padding: 10px 12px; }
+.video-title { font-size: 14px; color: #e8e8e8; margin-bottom: 4px; line-height: 1.4; }
+.video-meta { font-size: 11px; color: #666; display: flex; gap: 8px; align-items: center; }
+
+/* Loading / Empty states */
+.loading { text-align: center; padding: 40px; color: #666; }
+
+.spinner {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  border: 2px solid rgba(0,212,255,0.2);
+  border-top-color: #00d4ff;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.no-results { text-align: center; padding: 60px 20px; color: #666; }
+.no-results h3 { color: #999; margin-bottom: 10px; }
+
+/* Pagination */
 .pagination {
   display: flex;
   justify-content: center;
@@ -225,18 +438,10 @@ body {
   border-radius: 8px;
   color: #e8e8e8;
   cursor: pointer;
-  transition: all 0.2s;
 }
 
-.pagination button:hover {
-  background: rgba(0,212,255,0.1);
-  border-color: #00d4ff;
-}
-
-.pagination button:disabled {
-  opacity: 0.3;
-  cursor: not-allowed;
-}
+.pagination button:hover { background: rgba(0,212,255,0.1); border-color: #00d4ff; }
+.pagination button:disabled { opacity: 0.3; cursor: not-allowed; }
 
 .footer {
   text-align: center;
@@ -245,23 +450,106 @@ body {
   font-size: 12px;
 }
 
-.footer a {
-  color: #00d4ff;
-  text-decoration: none;
+/* Sign-in modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
 }
+
+.modal-overlay.active { display: flex; }
+
+.modal {
+  background: #12121a;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 16px;
+  padding: 40px;
+  max-width: 380px;
+  text-align: center;
+}
+
+.modal h2 {
+  color: #e8e8e8;
+  margin-bottom: 8px;
+  font-size: 24px;
+}
+
+.modal p {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+.google-signin {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 20px;
+  background: #fff;
+  border: none;
+  border-radius: 8px;
+  color: #1a1a1a;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.google-signin:hover { box-shadow: 0 2px 12px rgba(255,255,255,0.2); }
+
+.google-signin svg { width: 20px; height: 20px; }
+
+.modal-close {
+  margin-top: 12px;
+  background: none;
+  border: none;
+  color: #666;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.modal-close:hover { color: #999; }
 </style>
 </head>
 <body>
 
+<!-- Top bar with sign-in -->
+<div class="topbar">
+  <button class="signin-btn" id="signinBtn" onclick="openModal()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    Sign In
+  </button>
+  <div class="user-avatar" id="userAvatar" onclick="signOut()">
+    <img id="avatarImg" src="">
+    <span id="userName"></span>
+  </div>
+</div>
+
 <!-- Homepage -->
 <div class="home" id="homePage">
   <div class="logo">Rex<span>Search</span></div>
-  <div class="tagline">Fast. Private. Powerful.</div>
+  <div class="tagline">Search Without Surveillance</div>
+  <div class="tabs" id="homeTabs">
+    <button class="tab active" data-type="web" onclick="switchTab('web')">Web</button>
+    <button class="tab" data-type="images" onclick="switchTab('images')">Images</button>
+    <button class="tab" data-type="videos" onclick="switchTab('videos')">Videos</button>
+  </div>
   <div class="search-box">
-    <input type="text" class="search-input" id="searchInput" placeholder="Search the web..." autofocus>
+    <input type="text" class="search-input" id="searchInput" placeholder="Search the web privately..." autofocus>
     <button class="search-btn" onclick="doSearch()">Search</button>
   </div>
-  <div class="stats" id="stats">Loading...</div>
+  <div class="privacy-badges">
+    <div class="badge">No Tracking</div>
+    <div class="badge">No Cookies</div>
+    <div class="badge">No Logs</div>
+    <div class="badge">Open Source</div>
+  </div>
 </div>
 
 <!-- Results Page -->
@@ -273,25 +561,51 @@ body {
       <button class="search-btn" onclick="doSearch()">Search</button>
     </div>
   </div>
+  <div class="results-tabs" id="resultsTabs">
+    <button class="tab active" data-type="web" onclick="switchTab('web')">Web</button>
+    <button class="tab" data-type="images" onclick="switchTab('images')">Images</button>
+    <button class="tab" data-type="videos" onclick="switchTab('videos')">Videos</button>
+  </div>
   <div class="results-meta" id="resultsMeta"></div>
   <div id="resultsContainer"></div>
   <div class="pagination" id="pagination"></div>
 </div>
 
+<!-- Sign-in Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h2>Sign In to Rex</h2>
+    <p>Save your search history and personalize your experience. We never track your queries.</p>
+    <button class="google-signin" onclick="googleSignIn()">
+      <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+      Continue with Google
+    </button>
+    <button class="modal-close" onclick="closeModal()">Maybe later</button>
+  </div>
+</div>
+
 <script>
 let currentPage = 1;
 let currentQuery = '';
+let currentTab = 'web';
 
-// Load stats
-fetch('/api/stats').then(r => r.json()).then(data => {
-  document.getElementById('stats').innerHTML = 
-    `Indexing <b>${data.pages}</b> pages · ${data.size} · Powered by <a href="https://github.com/anserabdullah791-collab/rex-language">Rex Engine</a>`;
-});
+// Tab switching
+function switchTab(type) {
+  currentTab = type;
+  // Update all tab buttons
+  document.querySelectorAll('.tab').forEach(t => {
+    t.classList.toggle('active', t.dataset.type === type);
+  });
+  // If we have a query, re-search with new tab
+  if (currentQuery && document.getElementById('resultsPage').style.display === 'block') {
+    currentPage = 1;
+    fetchResults();
+  }
+}
 
 // Search on Enter
-document.getElementById('searchInput').addEventListener('keypress', e => {
-  if (e.key === 'Enter') doSearch();
-});
+document.getElementById('searchInput').addEventListener('keypress', e => { if (e.key === 'Enter') doSearch(); });
+document.getElementById('searchInput2').addEventListener('keypress', e => { if (e.key === 'Enter') doSearch(); });
 
 function goHome() {
   document.getElementById('homePage').style.display = 'flex';
@@ -303,27 +617,35 @@ async function doSearch() {
   const input = document.getElementById('searchInput');
   const input2 = document.getElementById('searchInput2');
   const query = (input.value || input2.value || '').trim();
-  
   if (!query) return;
-  
   currentQuery = query;
   currentPage = 1;
-  
-  // Show results page
   document.getElementById('homePage').style.display = 'none';
   document.getElementById('resultsPage').style.display = 'block';
   document.getElementById('searchInput2').value = query;
-  
   await fetchResults();
 }
 
 async function fetchResults() {
   const container = document.getElementById('resultsContainer');
   const meta = document.getElementById('resultsMeta');
-  container.innerHTML = '<div class="loading">Searching...</div>';
+  container.innerHTML = '<div class="loading"><div class="spinner"></div><br>Searching...</div>';
+  meta.innerHTML = '';
   
   try {
-    const res = await fetch(`/api/search?q=${encodeURIComponent(currentQuery)}&page=${currentPage}&limit=10`);
+    let endpoint, apiUrl;
+    if (currentTab === 'web') {
+      endpoint = '/api/search';
+      apiUrl = `/api/search?q=${encodeURIComponent(currentQuery)}&page=${currentPage}&limit=10`;
+    } else if (currentTab === 'images') {
+      endpoint = '/api/images';
+      apiUrl = `/api/images?q=${encodeURIComponent(currentQuery)}&limit=24`;
+    } else if (currentTab === 'videos') {
+      endpoint = '/api/videos';
+      apiUrl = `/api/videos?q=${encodeURIComponent(currentQuery)}&limit=15`;
+    }
+    
+    const res = await fetch(apiUrl);
     const data = await res.json();
     
     if (data.error) {
@@ -331,53 +653,127 @@ async function fetchResults() {
       return;
     }
     
-    meta.innerHTML = `Found <b>${data.total}</b> results in <span class="time">${data.time}</span>`;
+    // Meta text
+    let metaHtml = `Found <b>${data.total}</b> results in <span class="time">${data.time}</span>`;
+    if (data.engineStats) {
+      const parts = [];
+      for (const [engine, count] of Object.entries(data.engineStats)) {
+        if (count > 0) parts.push(`${engine}: ${count}`);
+      }
+      if (parts.length) metaHtml += ` <span class="source-badge">${parts.join(' · ')}</span>`;
+    }
+    meta.innerHTML = metaHtml;
     
     if (data.results.length === 0) {
-      container.innerHTML = `
-        <div class="no-results">
-          <h3>No results found</h3>
-          <p>Try different keywords or crawl more pages</p>
-        </div>`;
+      container.innerHTML = '<div class="no-results"><h3>No results found</h3><p>Try different keywords</p></div>';
       return;
     }
     
-    container.innerHTML = data.results.map(r => `
-      <div class="result-item">
-        <div class="result-url">
-          <span>${r.url}</span>
-          <span class="result-domain">${r.domain}</span>
+    // Render based on tab
+    if (currentTab === 'web') {
+      container.innerHTML = data.results.map(r => `
+        <div class="result-item">
+          <div class="result-url">
+            <span class="result-source" data-source="${r.source || ''}">${r.source || ''}</span>
+            <span>${r.url}</span>
+            <span class="result-domain">${r.domain}</span>
+          </div>
+          <a href="${r.url}" class="result-title" target="_blank" rel="noopener">${r.title}</a>
+          <div class="result-desc">${r.description || 'No description available'}</div>
         </div>
-        <a href="${r.url}" class="result-title" target="_blank">${r.title}</a>
-        <div class="result-desc">${r.description || r.snippet || 'No description available'}</div>
-        <span class="result-score">Score: ${r.score}</span>
-      </div>
-    `).join('');
-    
-    // Pagination
-    const pagination = document.getElementById('pagination');
-    const hasNext = data.results.length === 10;
-    pagination.innerHTML = `
-      <button onclick="prevPage()" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
-      <span style="padding:8px 16px;color:#666">Page ${currentPage}</span>
-      <button onclick="nextPage()" ${!hasNext ? 'disabled' : ''}>Next →</button>
-    `;
+      `).join('');
+      
+      // Pagination for web
+      const pagination = document.getElementById('pagination');
+      const hasNext = data.results.length === 10;
+      pagination.innerHTML = `
+        <button onclick="prevPage()" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
+        <span style="padding:8px 16px;color:#666">Page ${currentPage}</span>
+        <button onclick="nextPage()" ${!hasNext ? 'disabled' : ''}>Next →</button>
+      `;
+    } else if (currentTab === 'images') {
+      container.innerHTML = `<div class="image-grid">${data.results.map(r => `
+        <div class="image-card" onclick="window.open('${r.imageUrl || r.sourceUrl || '#'}', '_blank')">
+          <img src="${r.thumbnail || r.imageUrl}" alt="${r.title}" loading="lazy" onerror="this.parentElement.style.display='none'">
+          <div class="img-badge">${r.source || ''}</div>
+          <div class="img-info">
+            <div class="img-title">${r.title}</div>
+            <div class="img-source">${r.domain || ''}</div>
+          </div>
+        </div>
+      `).join('')}</div>`;
+      document.getElementById('pagination').innerHTML = '';
+    } else if (currentTab === 'videos') {
+      container.innerHTML = `<div class="video-grid">${data.results.map(r => `
+        <div class="video-card" onclick="window.open('${r.url || '#'}', '_blank')">
+          <div class="video-thumb">
+            ${r.thumbnail ? `<img src="${r.thumbnail}" alt="${r.title}" loading="lazy" onerror="this.style.display='none'">` : ''}
+            <div class="play-icon">▶</div>
+            ${r.duration ? `<div class="duration">${r.duration}</div>` : ''}
+          </div>
+          <div class="video-info">
+            <div class="video-title">${r.title}</div>
+            <div class="video-meta">
+              <span class="result-source" data-source="${r.source || ''}">${r.source || ''}</span>
+              ${r.domain ? `<span>${r.domain}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `).join('')}</div>`;
+      document.getElementById('pagination').innerHTML = '';
+    }
   } catch (e) {
     container.innerHTML = `<div class="no-results"><h3>Connection Error</h3><p>${e.message}</p></div>`;
   }
 }
 
-function prevPage() {
-  if (currentPage > 1) { currentPage--; fetchResults(); window.scrollTo(0,0); }
+function prevPage() { if (currentPage > 1) { currentPage--; fetchResults(); window.scrollTo(0,0); } }
+function nextPage() { currentPage++; fetchResults(); window.scrollTo(0,0); }
+
+// Sign-in
+function openModal() { document.getElementById('modalOverlay').classList.add('active'); }
+function closeModal() { document.getElementById('modalOverlay').classList.remove('active'); }
+
+function googleSignIn() {
+  // Simulate Google OAuth (in production, this would redirect to Google)
+  // For now, we simulate a successful sign-in
+  const userName = 'Rex User';
+  const userPic = 'https://api.dicebear.com/7.x/avataaars/svg?seed=rex';
+  
+  // Store in localStorage
+  localStorage.setItem('rexUser', JSON.stringify({ name: userName, pic: userPic }));
+  showUserAvatar(userName, userPic);
+  closeModal();
 }
 
-function nextPage() {
-  currentPage++; fetchResults(); window.scrollTo(0,0);
+function showUserAvatar(name, pic) {
+  document.getElementById('signinBtn').style.display = 'none';
+  document.getElementById('userAvatar').style.display = 'flex';
+  document.getElementById('avatarImg').src = pic;
+  document.getElementById('userName').textContent = name;
 }
+
+function signOut() {
+  localStorage.removeItem('rexUser');
+  document.getElementById('signinBtn').style.display = 'flex';
+  document.getElementById('userAvatar').style.display = 'none';
+}
+
+// Check for existing session
+window.addEventListener('load', () => {
+  const user = localStorage.getItem('rexUser');
+  if (user) {
+    try {
+      const u = JSON.parse(user);
+      showUserAvatar(u.name, u.pic);
+    } catch(e) { localStorage.removeItem('rexUser'); }
+  }
+});
 </script>
 
 <div class="footer">
-  Rex Search Engine v1.0 — Built by <a href="https://github.com/anserabdullah791-collab/rex-language">Digital Creators</a>
+  Rex Search Engine v3.0 — Web + Images + Videos · Search Without Surveillance<br>
+  Built by <a href="https://github.com/anserabdullah791-collab/rex-search">Digital Creators</a>
 </div>
 
 </body>

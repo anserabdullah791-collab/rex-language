@@ -1,14 +1,12 @@
 {
   "name": "rex-search",
-  "version": "1.0.0",
-  "description": "Rex Search Engine — A fast, privacy-focused web search engine built with Node.js",
+  "version": "3.0.0",
+  "description": "Rex Search Engine v3.0 — Privacy-first meta-search proxy with Web, Images, and Videos search. Search without surveillance.",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "crawl": "node crawler/crawler.js",
-    "index": "node indexer/indexer.js",
-    "test": "node test.js"
+    "start": "node server.js"
   },
-  "keywords": ["search", "engine", "rex", "web"],
-  "license": "MIT"
+  "keywords": ["search", "engine", "rex", "meta-search", "privacy", "proxy", "images", "videos", "duckduckgo", "bing"],
+  "license": "MIT",
+  "author": "Abdullah Anser & Box (Digital Creators)"
 }
