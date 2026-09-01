@@ -1,8 +1,8 @@
 {
   "name": "rex-language",
   "displayName": "Rex Programming Language",
-  "description": "Rex v5.1 \u2014 Classes, Import, JSON, Date/Time, Match/case. The World's #1 Simplest Programming Language. Just write English.",
-  "version": "5.1.0",
+  "description": "Rex v6.0 \u2014 Cybersecurity, HTTP, Regex, OOP, Import. The World's #1 Simplest Programming Language.",
+  "version": "6.0.0",
   "publisher": "digitalcreators",
   "author": {
     "name": "Abdullah Anser & Box",

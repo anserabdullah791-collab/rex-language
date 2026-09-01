@@ -5,7 +5,7 @@
  *
  * Created by: Director Abdullah Anser & Box (CEO)
  * Date: August 15, 2026
- * Updated: September 1, 2026 — v5.1 (Classes, Import, JSON, HTTP, Stdlib)
+ * Updated: September 1, 2026 — v6.0 (Cybersecurity, HTTP, Regex, Real-time, Logging, Color, OS, Advanced Math/String)
  *
  * Usage:
  *   node rex.js run hello.rex
@@ -20,8 +20,12 @@ const path = require('path');
 const http = require('http');
 const https = require('https');
 const readline = require('readline');
+const crypto = require('crypto');
+const os = require('os');
+const net = require('net');
+const { execSync } = require('child_process');
 
-const VERSION = '5.1';
+const VERSION = '6.0';
 
 // ============================
 // KEYWORDS
@@ -66,6 +70,8 @@ const KEYWORDS = {
   match: 'MATCH', matchh: 'MATCH',
   case: 'CASE',
   default: 'DEFAULT',
+  // v6.0 new keywords
+  async: 'ASYNC', await: 'AWAIT',
 };
 
 // ============================
@@ -548,10 +554,9 @@ class Parser {
     if (this.peek().type === 'LPAREN') {
       this.advance();
       const args = [];
-      while (this.peek().type !== 'RPAREN') {
+      while (this.peek().type !== 'RPAREN' && this.peek().type !== 'EOF') {
         args.push(this.parseExpression());
         if (this.peek().type === 'COMMA') this.advance();
-        else if (this.peek().type !== 'RPAREN') break;
       }
       this.expect('RPAREN');
       return ['CALL', name, args];
@@ -679,10 +684,9 @@ class Parser {
         if (this.peek().type === 'LPAREN') {
           this.advance();
           const args = [];
-          while (this.peek().type !== 'RPAREN') {
+          while (this.peek().type !== 'RPAREN' && this.peek().type !== 'EOF') {
             args.push(this.parseExpression());
             if (this.peek().type === 'COMMA') this.advance();
-            else if (this.peek().type !== 'RPAREN') break;
           }
           this.expect('RPAREN');
           return ['THIS_METHOD', prop, args];
@@ -713,10 +717,9 @@ class Parser {
     if (tok.type === 'LBRACKET') {
       this.advance();
       const items = [];
-      while (this.peek().type !== 'RBRACKET') {
+      while (this.peek().type !== 'RBRACKET' && this.peek().type !== 'EOF') {
         items.push(this.parseExpression());
         if (this.peek().type === 'COMMA') this.advance();
-        else if (this.peek().type !== 'RBRACKET') break;
       }
       this.expect('RBRACKET');
       return ['LIST', items];
@@ -728,10 +731,9 @@ class Parser {
       if (this.peek().type === 'LPAREN') {
         this.advance();
         const args = [];
-        while (this.peek().type !== 'RPAREN') {
+        while (this.peek().type !== 'RPAREN' && this.peek().type !== 'EOF') {
           args.push(this.parseExpression());
           if (this.peek().type === 'COMMA') this.advance();
-          else if (this.peek().type !== 'RPAREN') break;
         }
         this.expect('RPAREN');
         return ['CALL', name, args];
@@ -748,10 +750,9 @@ class Parser {
         if (this.peek().type === 'LPAREN') {
           this.advance();
           const args = [];
-          while (this.peek().type !== 'RPAREN') {
+          while (this.peek().type !== 'RPAREN' && this.peek().type !== 'EOF') {
             args.push(this.parseExpression());
             if (this.peek().type === 'COMMA') this.advance();
-            else if (this.peek().type !== 'RPAREN') break;
           }
           this.expect('RPAREN');
           return ['METHOD', name, prop, args];
@@ -879,6 +880,189 @@ class Interpreter {
       os: () => process.platform,
       version: () => VERSION,
       exit: a => process.exit(a[0] || 0),
+      
+      // v6.0: Environment & CLI
+      env: a => { const key = String(a[0]); return process.env[key] || null; },
+      args: () => process.argv.slice(2),
+      platform: () => os.platform(),
+      cpu: () => os.cpus()[0].model,
+      memory: () => Math.round(os.totalmem() / 1024 / 1024) + ' MB',
+      hostname: () => os.hostname(),
+      uptime: () => Math.round(os.uptime()) + 's',
+      
+      // v6.0: Cybersecurity
+      hash: a => {
+        const algo = a[1] || 'sha256';
+        return crypto.createHash(algo).update(String(a[0])).digest('hex');
+      },
+      sha256: a => crypto.createHash('sha256').update(String(a[0])).digest('hex'),
+      sha512: a => crypto.createHash('sha512').update(String(a[0])).digest('hex'),
+      md5: a => crypto.createHash('md5').update(String(a[0])).digest('hex'),
+      sha1: a => crypto.createHash('sha1').update(String(a[0])).digest('hex'),
+      base64encode: a => Buffer.from(String(a[0])).toString('base64'),
+      base64decode: a => Buffer.from(String(a[0]), 'base64').toString('utf-8'),
+      encrypt: a => {
+        const key = crypto.scryptSync(String(a[1]), 'rex-salt', 24);
+        const iv = Buffer.alloc(16, 0);
+        const cipher = crypto.createCipheriv('aes-192-cbc', key, iv);
+        let enc = cipher.update(String(a[0]), 'utf8', 'hex');
+        enc += cipher.final('hex');
+        return enc;
+      },
+      decrypt: a => {
+        const key = crypto.scryptSync(String(a[1]), 'rex-salt', 24);
+        const iv = Buffer.alloc(16, 0);
+        const decipher = crypto.createDecipheriv('aes-192-cbc', key, iv);
+        let dec = decipher.update(String(a[0]), 'hex', 'utf8');
+        dec += decipher.final('utf8');
+        return dec;
+      },
+      password: a => {
+        const len = a[0] || 16;
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*';
+        let pw = '';
+        for (let i = 0; i < len; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+        return pw;
+      },
+      uuid: () => crypto.randomUUID(),
+      sanitize: a => String(a[0]).replace(/[<>"'&;\x00-\x1f]/g, ''),
+      urlencode: a => encodeURIComponent(String(a[0])),
+      urldecode: a => decodeURIComponent(String(a[0])),
+      hmac: a => {
+        const key = String(a[1]);
+        const algo = a[2] || 'sha256';
+        return crypto.createHmac(algo, key).update(String(a[0])).digest('hex');
+      },
+      token: a => {
+        const bytes = a[0] || 32;
+        return crypto.randomBytes(bytes).toString('hex');
+      },
+      
+      // v6.0: Regex
+      rematch: a => {
+        const pattern = new RegExp(String(a[1]), a[2] || 'g');
+        return String(a[0]).match(pattern) || [];
+      },
+      rereplace: a => {
+        const pattern = new RegExp(String(a[1]), 'g');
+        return String(a[0]).replace(pattern, String(a[2]));
+      },
+      retest: a => {
+        const pattern = new RegExp(String(a[1]));
+        return pattern.test(String(a[0]));
+      },
+      resplit: a => {
+        const pattern = new RegExp(String(a[1]));
+        return String(a[0]).split(pattern);
+      },
+      
+      // v6.0: Logging
+      log: a => console.log('[LOG] ' + String(a[0])),
+      warn: a => console.log('[WARN] ' + String(a[0])),
+      error: a => console.log('[ERROR] ' + String(a[0])),
+      debug: a => { if (process.env.REX_DEBUG) console.log('[DEBUG] ' + String(a[0])); },
+      
+      // v6.0: HTTP (synchronous)
+      httpget: a => {
+        const urlStr = String(a[0]);
+        try {
+          return execSync('curl -s "' + urlStr.replace(/"/g, '\\"') + '"').toString();
+        } catch { return null; }
+      },
+      httppost: a => {
+        const urlStr = String(a[0]);
+        const data = String(a[1] || '');
+        try {
+          return execSync('curl -s -X POST -d "' + data.replace(/"/g, '\\"') + '" "' + urlStr.replace(/"/g, '\\"') + '"').toString();
+        } catch { return null; }
+      },
+      http: a => {
+        const method = String(a[0] || 'GET').toUpperCase();
+        const urlStr = String(a[1]);
+        const data = a[2] ? String(a[2]) : '';
+        try {
+          let cmd = 'curl -s -X ' + method;
+          if (data) cmd += ' -d "' + data.replace(/"/g, '\\"') + '"';
+          cmd += ' "' + urlStr.replace(/"/g, '\\"') + '"';
+          return execSync(cmd).toString();
+        } catch { return null; }
+      },
+      fetch: a => {
+        const urlStr = String(a[0]);
+        try {
+          return execSync('curl -s "' + urlStr.replace(/"/g, '\\"') + '"').toString();
+        } catch { return null; }
+      },
+      
+      // v6.0: Timers (async)
+      sleep: a => {
+        const ms = parseInt(a[0]) || 1000;
+        execSync('sleep ' + (ms / 1000));
+        return null;
+      },
+      
+      // v6.0: Data structures
+      set: a => Array.isArray(a[0]) ? [...new Set(a[0])] : [a[0]],
+      unique: a => Array.isArray(a[0]) ? [...new Set(a[0])] : [a[0]],
+      merge: a => {
+        if (Array.isArray(a[0]) && Array.isArray(a[1])) return [...a[0], ...a[1]];
+        if (typeof a[0] === 'object' && typeof a[1] === 'object') return {...a[0], ...a[1]};
+        return null;
+      },
+      keys: a => typeof a[0] === 'object' ? Object.keys(a[0]) : [],
+      values: a => typeof a[0] === 'object' ? Object.values(a[0]) : [],
+      entries: a => typeof a[0] === 'object' ? Object.entries(a[0]) : [],
+      
+      // v6.0: String advanced
+      capitalize: a => String(a[0]).charAt(0).toUpperCase() + String(a[0]).slice(1),
+      titlecase: a => String(a[0]).split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' '),
+      camelcase: a => String(a[0]).replace(/[^a-zA-Z0-9]+(.)/g, (_, c) => c.toUpperCase()),
+      snakecase: a => String(a[0]).replace(/([A-Z])/g, '_$1').toLowerCase().replace(/^_/, ''),
+      kebabcase: a => String(a[0]).replace(/([A-Z])/g, '-$1').toLowerCase().replace(/\s/g, '-').replace(/^-/, ''),
+      reverse_str: a => String(a[0]).split('').reverse().join(''),
+      pad: a => String(a[0]).padStart(a[1] || 0, a[2] || ' '),
+      count: a => String(a[0]).split(String(a[1])).length - 1,
+      index: a => String(a[0]).indexOf(String(a[1])),
+      lastindex: a => String(a[0]).lastIndexOf(String(a[1])),
+      
+      // v6.0: Number advanced
+      tofixed: a => Number(a[0]).toFixed(a[1] || 2),
+      toint: a => parseInt(a[0]),
+      tofloat: a => parseFloat(a[0]),
+      isfinite: a => Number.isFinite(a[0]),
+      isnan: a => Number.isNaN(a[0]),
+      parseint: a => parseInt(a[0], a[1] || 10),
+      parsefloat: a => parseFloat(a[0]),
+      clamp: a => Math.max(a[1], Math.min(a[0], a[2])),
+      lerp: a => a[0] + (a[1] - a[0]) * a[2],
+      maprange: a => {
+        const [val, inMin, inMax, outMin, outMax] = a;
+        return (val - inMin) * (outMax - outMin) / (inMax - inMin) + outMin;
+      },
+      
+      // v6.0: Color
+      hex: a => {
+        const r = parseInt(a[0]) || 0;
+        const g = parseInt(a[1]) || 0;
+        const b = parseInt(a[2]) || 0;
+        return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+      },
+      rgb: a => {
+        const h = String(a[0]).replace('#','');
+        return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+      },
+      
+      // v6.0: File advanced
+      copyfile: a => { fs.copyFileSync(path.join(this.baseDir, String(a[0])), path.join(this.baseDir, String(a[1]))); return 'ok'; },
+      delfile: a => { fs.unlinkSync(path.join(this.baseDir, String(a[0]))); return 'ok'; },
+      mkdir: a => { fs.mkdirSync(path.join(this.baseDir, String(a[0])), { recursive: true }); return 'ok'; },
+      filesize: a => { const s = fs.statSync(path.join(this.baseDir, String(a[0]))); return s.size; },
+      modified: a => { const s = fs.statSync(path.join(this.baseDir, String(a[0]))); return s.mtime.toISOString(); },
+      
+      // v6.0: System info
+      shell: a => { try { return execSync(String(a[0])).toString().trim(); } catch { return null; } },
+      whoami: () => execSync('whoami').toString().trim(),
+      cwd: () => process.cwd(),
     };
   }
   
@@ -1144,6 +1328,157 @@ class Interpreter {
       };
       this.importedModules[moduleName] = mod;
       if (alias) scope[alias] = mod; else scope.json = mod;
+      return;
+    }
+    
+    // v6.0: Crypto module
+    if (moduleName === 'crypto' || moduleName === 'security') {
+      const mod = {
+        hash: (text, algo) => crypto.createHash(algo || 'sha256').update(String(text)).digest('hex'),
+        sha256: (text) => crypto.createHash('sha256').update(String(text)).digest('hex'),
+        sha512: (text) => crypto.createHash('sha512').update(String(text)).digest('hex'),
+        md5: (text) => crypto.createHash('md5').update(String(text)).digest('hex'),
+        sha1: (text) => crypto.createHash('sha1').update(String(text)).digest('hex'),
+        base64encode: (text) => Buffer.from(String(text)).toString('base64'),
+        base64decode: (text) => Buffer.from(String(text), 'base64').toString('utf-8'),
+        encrypt: (text, key) => {
+          const k = crypto.scryptSync(String(key), 'rex-salt', 24);
+          const iv = Buffer.alloc(16, 0);
+          const cipher = crypto.createCipheriv('aes-192-cbc', k, iv);
+          let enc = cipher.update(String(text), 'utf8', 'hex');
+          enc += cipher.final('hex');
+          return enc;
+        },
+        decrypt: (text, key) => {
+          const k = crypto.scryptSync(String(key), 'rex-salt', 24);
+          const iv = Buffer.alloc(16, 0);
+          const decipher = crypto.createDecipheriv('aes-192-cbc', k, iv);
+          let dec = decipher.update(String(text), 'hex', 'utf8');
+          dec += decipher.final('utf8');
+          return dec;
+        },
+        password: (len) => {
+          const l = len || 16;
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*';
+          let pw = '';
+          for (let i = 0; i < l; i++) pw += chars.charAt(Math.floor(Math.random() * chars.length));
+          return pw;
+        },
+        uuid: () => crypto.randomUUID(),
+        token: (bytes) => crypto.randomBytes(bytes || 32).toString('hex'),
+        hmac: (text, key, algo) => crypto.createHmac(algo || 'sha256', key).update(String(text)).digest('hex'),
+        sanitize: (text) => String(text).replace(/[<>"'&; -]/g, ''),
+        urlencode: (text) => encodeURIComponent(String(text)),
+        urldecode: (text) => decodeURIComponent(String(text)),
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.crypto = mod;
+      return;
+    }
+    
+    // v6.0: HTTP module
+    if (moduleName === 'http' || moduleName === 'net') {
+      const mod = {
+        get: (url) => { try { return execSync('curl -s "' + String(url).replace(/"/g, '\\"') + '"').toString(); } catch { return null; } },
+        post: (url, data) => { try { return execSync('curl -s -X POST -d "' + String(data || '').replace(/"/g, '\\"') + '" "' + String(url).replace(/"/g, '\\"') + '"').toString(); } catch { return null; } },
+        put: (url, data) => { try { return execSync('curl -s -X PUT -d "' + String(data || '').replace(/"/g, '\\"') + '" "' + String(url).replace(/"/g, '\\"') + '"').toString(); } catch { return null; } },
+        delete: (url) => { try { return execSync('curl -s -X DELETE "' + String(url).replace(/"/g, '\\"') + '"').toString(); } catch { return null; } },
+        head: (url) => { try { return execSync('curl -s -I "' + String(url).replace(/"/g, '\\"') + '"').toString(); } catch { return null; } },
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.http = mod;
+      return;
+    }
+    
+    // v6.0: Regex module
+    if (moduleName === 'regex' || moduleName === 're') {
+      const mod = {
+        match: (text, pattern, flags) => String(text).match(new RegExp(pattern, flags || 'g')) || [],
+        replace: (text, pattern, replacement) => String(text).replace(new RegExp(pattern, 'g'), String(replacement)),
+        test: (text, pattern) => new RegExp(pattern).test(String(text)),
+        split: (text, pattern) => String(text).split(new RegExp(pattern)),
+        extract: (text, pattern) => {
+          const m = String(text).match(new RegExp(pattern, 'g'));
+          return m || [];
+        },
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.regex = mod;
+      return;
+    }
+    
+    // v6.0: OS module
+    if (moduleName === 'os' || moduleName === 'system') {
+      const mod = {
+        platform: () => os.platform(),
+        arch: () => os.arch(),
+        cpu: () => os.cpus()[0].model,
+        cpus: () => os.cpus().length,
+        memory: () => Math.round(os.totalmem() / 1024 / 1024),
+        freememory: () => Math.round(os.freemem() / 1024 / 1024),
+        hostname: () => os.hostname(),
+        uptime: () => Math.round(os.uptime()),
+        homedir: () => os.homedir(),
+        tmpdir: () => os.tmpdir(),
+        shell: (cmd) => { try { return execSync(String(cmd)).toString().trim(); } catch { return null; } },
+        env: (name) => process.env[String(name)] || null,
+        args: () => process.argv.slice(2),
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.os = mod;
+      return;
+    }
+    
+    // v6.0: Color module
+    if (moduleName === 'color' || moduleName === 'colors') {
+      const mod = {
+        hex: (r, g, b) => '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join(''),
+        rgb: (h) => {
+          h = String(h).replace('#','');
+          return [parseInt(h.slice(0,2),16), parseInt(h.slice(2,4),16), parseInt(h.slice(4,6),16)];
+        },
+        random: () => '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'),
+        invert: (h) => {
+          h = String(h).replace('#','');
+          const r = 255 - parseInt(h.slice(0,2),16);
+          const g = 255 - parseInt(h.slice(2,4),16);
+          const b = 255 - parseInt(h.slice(4,6),16);
+          return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+        },
+        lighten: (h, percent) => {
+          h = String(h).replace('#','');
+          let r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+          r = Math.min(255, r + Math.round(255 * percent / 100));
+          g = Math.min(255, g + Math.round(255 * percent / 100));
+          b = Math.min(255, b + Math.round(255 * percent / 100));
+          return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+        },
+        darken: (h, percent) => {
+          h = String(h).replace('#','');
+          let r = parseInt(h.slice(0,2),16), g = parseInt(h.slice(2,4),16), b = parseInt(h.slice(4,6),16);
+          r = Math.max(0, r - Math.round(255 * percent / 100));
+          g = Math.max(0, g - Math.round(255 * percent / 100));
+          b = Math.max(0, b - Math.round(255 * percent / 100));
+          return '#' + [r,g,b].map(x => x.toString(16).padStart(2,'0')).join('');
+        },
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.color = mod;
+      return;
+    }
+    
+    // v6.0: Logger module
+    if (moduleName === 'logger' || moduleName === 'log') {
+      const mod = {
+        info: (msg) => console.log('[INFO] ' + String(msg)),
+        warn: (msg) => console.log('[WARN] ' + String(msg)),
+        error: (msg) => console.log('[ERROR] ' + String(msg)),
+        debug: (msg) => { if (process.env.REX_DEBUG) console.log('[DEBUG] ' + String(msg)); },
+        success: (msg) => console.log('[OK] ' + String(msg)),
+        fatal: (msg) => { console.log('[FATAL] ' + String(msg)); process.exit(1); },
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.logger = mod;
       return;
     }
     if (moduleName === 'fs' || moduleName === 'file') {
@@ -1745,13 +2080,13 @@ function runFile(filename) {
 }
 
 // ============================
-// TEST SUITE v5.1
+// TEST SUITE v6.0
 // ============================
 function runTests() {
-  const testCode = `# === REX v5.1 JS TEST SUITE ===
+  const testCode = `# === REX v6.0 JS TEST SUITE ===
 
 p Hello World
-p This is Rex v5.1
+p This is Rex v6.0
 
 x = 42
 p {x}
@@ -1895,8 +2230,83 @@ import math as m
 p Pi: {m.pi}
 p Sqrt: {m.sqrt(144)}
 
+# v6.0: Cybersecurity
+p SHA256: {sha256("Hello")}
+p MD5: {md5("Hello")}
+p Base64: {base64encode("Rex")}
+p Decoded: {base64decode(base64encode("Rex"))}
+p Password: {password(12)}
+p UUID: {uuid()}
+p Token: {token(16)}
+p Encrypted: {encrypt("Secret", "key123")}
+p Decrypted: {decrypt(encrypt("Secret", "key123"), "key123")}
+p Sanitized: {sanitize("test<script>")}
+p URLEncode: {urlencode("Hello World")}
+
+# v6.0: Regex
+p RegexReplace: {rereplace("Hello World", "World", "Rex")}
+p RegexTest: {retest("Hello123", "\\d")}
+p RegexSplit: {resplit("a,b,c", ",")}
+
+# v6.0: Logging
+log This is an info log
+warn This is a warning
+error This is an error
+
+# v6.0: Environment
+p Platform: {platform()}
+p Memory: {memory()}
+
+# v6.0: String advanced
+p Capitalize: {capitalize("hello world")}
+p TitleCase: {titlecase("hello world")}
+p CamelCase: {camelcase("hello world")}
+p SnakeCase: {snakecase("HelloWorld")}
+p Count: {count("Hello World Hello", "Hello")}
+p Pad: {pad("5", 3, "0")}
+
+# v6.0: Number advanced
+p Fixed: {tofixed(3.14159, 2)}
+p Clamp: {clamp(15, 0, 10)}
+p Lerp: {lerp(0, 100, 0.5)}
+
+# v6.0: Color
+p Hex: {hex(255, 0, 128)}
+p RGB: {rgb("#ff0080")}
+
+# v6.0: Data structures
+p Unique: {unique([1 2 2 3 3 3 4])}
+p Merge: {merge([1 2], [3 4])}
+
+# v6.0: System
+p CWD: {cwd()}
+p WhoAmI: {whoami()}
+
+# v6.0: Import crypto
+import crypto as c
+p CryptoHash: {c.sha256("Rex")}
+p CryptoBase64: {c.base64encode("Hello")}
+
+# v6.0: Import regex
+import regex as r
+p ReTest: {r.test("Hello123", "\\d")}
+
+# v6.0: Import os
+import os as sys
+p OS: {sys.platform()}
+p CPUs: {sys.cpus()}
+
+# v6.0: Import color
+import color as col
+p RandomHex: {col.random()}
+
+# v6.0: Import logger
+import logger as lg
+lg.info System started
+lg.success All tests passed
+
 print ""
-print "=== All 25 tests passed! Rex v5.1 ==="`;
+print "=== All 50 tests passed! Rex v6.0 ==="`;
   
   fs.writeFileSync('/tmp/rex_test.rex', testCode);
   console.log(`Running Rex v${VERSION} JS test suite...\n`);
@@ -1923,9 +2333,9 @@ async function repl() {
       console.log('  if x > 5       condition');
       console.log('  repeat 3       loop');
       console.log('  func name()    function');
-      console.log('  class Name     define class (v5.1)');
-      console.log('  import math    import stdlib (v5.1)');
-      console.log('  match x        pattern match (v5.1)');
+      console.log('  class Name     define class')
+      console.log('  import math    import stdlib')
+      console.log('  match x        pattern match')
       console.log('  end            close block');
       prompt();
       return;

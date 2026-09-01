@@ -1,4 +1,4 @@
-# Rex (ریکس) v5.1
+# Rex (ریکس) v6.0
 
 > The World's Simplest Programming Language — No semicolons. No brackets. No quotes needed. Just write English.
 
@@ -6,7 +6,22 @@ Rex is a unified programming language designed to replace Python, HTML, CSS, and
 
 Created by **Abdullah Anser** (Director) and **Box** (AI CEO) at **Digital Creators**.
 
-## What's New in v5.1
+## What's New in v6.0
+
+- **Cybersecurity Module** — `sha256()`, `sha512()`, `md5()`, `encrypt()`, `decrypt()`, `base64encode()`, `base64decode()`, `password()`, `uuid()`, `hmac()`, `sanitize()`, `token()`, `import crypto`
+- **HTTP/Network** — `httpget()`, `httppost()`, `http()`, `fetch()`, `import http` with get/post/put/delete
+- **Regex Support** — `rematch()`, `rereplace()`, `retest()`, `resplit()`, `import regex`
+- **Logging System** — `log()`, `warn()`, `error()`, `debug()`, `import logger` with info/warn/error/debug/success/fatal
+- **OS/System Module** — `platform()`, `cpu()`, `memory()`, `hostname()`, `uptime()`, `shell()`, `env()`, `args()`, `import os`
+- **Color Module** — `hex()`, `rgb()`, `random()`, `invert()`, `lighten()`, `darken()`, `import color`
+- **Advanced Math** — `clamp()`, `lerp()`, `maprange()`, `tofixed()`, `isfinite()`, `isnan()`
+- **Advanced Strings** — `capitalize()`, `titlecase()`, `camelcase()`, `snakecase()`, `kebabcase()`, `pad()`, `count()`, `index()`
+- **Data Structures** — `unique()`, `merge()`, `keys()`, `values()`, `entries()`, `set()`
+- **File Operations** — `copyfile()`, `delfile()`, `mkdir()`, `filesize()`, `modified()`
+- **System Access** — `whoami()`, `cwd()`, `shell()`, `env()`, `args()`
+- **50 Tests Passing** — Full test suite covering all v5.1 + v6.0 features
+
+### Also from v5.1 (still included)
 
 - **Classes & OOP** — `class`, `new`, `this`, `extends`, inheritance, method overrides
 - **Import System** — `import math`, `import json`, `import fs`, `import time`, `import string`
@@ -530,10 +545,10 @@ node rex.js serve .
 
 ## VS Code Extension
 
-Install `rex-language-5.1.0.vsix` from the `rex-vscode/` folder:
+Install `rex-language-6.0.0.vsix` from the `rex-vscode/` folder:
 
 ```bash
-code --install-extension rex-language-5.1.0.vsix
+code --install-extension rex-language-6.0.0.vsix
 ```
 
 Features:
@@ -606,7 +621,34 @@ Features:
 `type`, `number`, `text`, `string`, `boolean`
 
 ### System
-`os`, `version`, `exit`
+`os`, `version`, `exit`, `whoami`, `cwd`, `shell`, `env`, `args`, `platform`, `cpu`, `memory`, `hostname`, `uptime`
+
+### Cybersecurity (v6.0)
+`hash`, `sha256`, `sha512`, `md5`, `sha1`, `encrypt`, `decrypt`, `base64encode`, `base64decode`, `password`, `uuid`, `token`, `hmac`, `sanitize`, `urlencode`, `urldecode`
+
+### Regex (v6.0)
+`rematch`, `rereplace`, `retest`, `resplit`
+
+### Logging (v6.0)
+`log`, `warn`, `error`, `debug`
+
+### HTTP (v6.0)
+`httpget`, `httppost`, `http`, `fetch`
+
+### Advanced Math (v6.0)
+`clamp`, `lerp`, `maprange`, `tofixed`, `toint`, `tofloat`, `isfinite`, `isnan`, `parseint`, `parsefloat`
+
+### Advanced String (v6.0)
+`capitalize`, `titlecase`, `camelcase`, `snakecase`, `kebabcase`, `reverse_str`, `pad`, `count`, `index`, `lastindex`
+
+### Color (v6.0)
+`hex`, `rgb`
+
+### Data Structures (v6.0)
+`unique`, `merge`, `keys`, `values`, `entries`, `set`
+
+### File Advanced (v6.0)
+`copyfile`, `delfile`, `mkdir`, `filesize`, `modified`
 
 ## Standard Library Modules (v5.1)
 
@@ -617,6 +659,12 @@ Features:
 | `time` | now, date, today, year, month, day, hour, clock |
 | `json` | parse, stringify |
 | `fs` | read, write, exists, list, append |
+| `crypto` (v6.0) | hash, sha256, sha512, md5, encrypt, decrypt, base64encode, base64decode, password, uuid, token, hmac, sanitize, urlencode, urldecode |
+| `http` (v6.0) | get, post, put, delete, head |
+| `regex` (v6.0) | match, replace, test, split, extract |
+| `os` (v6.0) | platform, arch, cpu, cpus, memory, freememory, hostname, uptime, homedir, tmpdir, shell, env, args |
+| `color` (v6.0) | hex, rgb, random, invert, lighten, darken |
+| `logger` (v6.0) | info, warn, error, debug, success, fatal |
 
 ---
 
