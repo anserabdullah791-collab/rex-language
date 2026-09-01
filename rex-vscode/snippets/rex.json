@@ -81,6 +81,55 @@
     ],
     "description": "Try-catch block"
   },
+  "Class": {
+    "prefix": "class",
+    "body": [
+      "class ${1:Name}",
+      "  init(${2:params})",
+      "    ${3:this.value = value}",
+      "  end",
+      "  ${4:method}()",
+      "    ${5:body}",
+      "  end",
+      "end"
+    ],
+    "description": "Define a class (v5.1)"
+  },
+  "Class with Inheritance": {
+    "prefix": "classext",
+    "body": [
+      "class ${1:Child} extends ${2:Parent}",
+      "  ${3:method}()",
+      "    ${4:body}",
+      "  end",
+      "end"
+    ],
+    "description": "Class with inheritance (v5.1)"
+  },
+  "Import": {
+    "prefix": "import",
+    "body": "import ${1:module} as ${2:alias}",
+    "description": "Import module (v5.1)"
+  },
+  "Match": {
+    "prefix": "match",
+    "body": [
+      "match ${1:expression}",
+      "  case ${2:value}",
+      "    ${3:body}",
+      "  end",
+      "  default",
+      "    ${4:default body}",
+      "  end",
+      "end"
+    ],
+    "description": "Match/case block (v5.1)"
+  },
+  "New Object": {
+    "prefix": "new",
+    "body": "${1:var} = new ${2:ClassName}(${3:args})",
+    "description": "Create new object instance (v5.1)"
+  },
   "List": {
     "prefix": "list",
     "body": "[${1:items}]",
@@ -101,7 +150,7 @@
       "end",
       "",
       "style",
-      "body: color: white, font-family: Arial",
+      "body: color: white font-family: Arial",
       "end",
       "",
       "script",
