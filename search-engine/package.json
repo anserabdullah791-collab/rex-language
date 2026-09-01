@@ -1,0 +1,14 @@
+{
+  "name": "rex-search",
+  "version": "1.0.0",
+  "description": "Rex Search Engine — A fast, privacy-focused web search engine built with Node.js",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "crawl": "node crawler/crawler.js",
+    "index": "node indexer/indexer.js",
+    "test": "node test.js"
+  },
+  "keywords": ["search", "engine", "rex", "web"],
+  "license": "MIT"
+}

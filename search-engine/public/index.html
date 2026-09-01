@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rex Search — The Fast Search Engine</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: #0a0a0f;
+  color: #e8e8e8;
+  min-height: 100vh;
+}
+
+/* Logo and search on homepage */
+.home {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.logo {
+  font-size: 72px;
+  font-weight: 800;
+  margin-bottom: 8px;
+  background: linear-gradient(135deg, #00d4ff, #0066ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: -2px;
+}
+
+.logo span {
+  background: linear-gradient(135deg, #ff0080, #ff8800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.tagline {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 40px;
+}
+
+.search-box {
+  width: 100%;
+  max-width: 600px;
+  display: flex;
+  gap: 0;
+}
+
+.search-input {
+  flex: 1;
+  padding: 16px 20px;
+  font-size: 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-right: none;
+  border-radius: 12px 0 0 12px;
+  color: #fff;
+  outline: none;
+  transition: all 0.3s;
+}
+
+.search-input:focus {
+  background: rgba(255,255,255,0.08);
+  border-color: #00d4ff;
+  box-shadow: 0 0 20px rgba(0,212,255,0.15);
+}
+
+.search-btn {
+  padding: 16px 28px;
+  background: linear-gradient(135deg, #00d4ff, #0066ff);
+  border: none;
+  border-radius: 0 12px 12px 0;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.search-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.02);
+}
+
+.stats {
+  margin-top: 30px;
+  color: #444;
+  font-size: 13px;
+}
+
+.stats a {
+  color: #00d4ff;
+  text-decoration: none;
+}
+
+/* Results page */
+.results-page {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.results-header {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+
+.results-header .logo {
+  font-size: 28px;
+  cursor: pointer;
+}
+
+.results-search {
+  flex: 1;
+  display: flex;
+}
+
+.results-search .search-input {
+  font-size: 14px;
+  padding: 10px 16px;
+}
+
+.results-search .search-btn {
+  padding: 10px 20px;
+  font-size: 14px;
+}
+
+.results-meta {
+  color: #666;
+  font-size: 13px;
+  margin-bottom: 20px;
+}
+
+.results-meta .time {
+  color: #00d4ff;
+}
+
+.result-item {
+  padding: 15px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+
+.result-url {
+  font-size: 12px;
+  color: #4a9eff;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.result-domain {
+  color: #666;
+  font-size: 11px;
+}
+
+.result-title {
+  font-size: 18px;
+  color: #e8e8e8;
+  text-decoration: none;
+  display: block;
+  margin-bottom: 4px;
+  transition: color 0.2s;
+}
+
+.result-title:hover {
+  color: #00d4ff;
+}
+
+.result-desc {
+  font-size: 14px;
+  color: #999;
+  line-height: 1.5;
+}
+
+.result-score {
+  display: inline-block;
+  font-size: 10px;
+  color: #444;
+  margin-top: 4px;
+  padding: 2px 8px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 4px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.no-results h3 {
+  color: #999;
+  margin-bottom: 10px;
+}
+
+.loading {
+  text-align: center;
+  padding: 40px;
+  color: #666;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 30px;
+}
+
+.pagination button {
+  padding: 8px 16px;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 8px;
+  color: #e8e8e8;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pagination button:hover {
+  background: rgba(0,212,255,0.1);
+  border-color: #00d4ff;
+}
+
+.pagination button:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.footer {
+  text-align: center;
+  padding: 30px;
+  color: #333;
+  font-size: 12px;
+}
+
+.footer a {
+  color: #00d4ff;
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+
+<!-- Homepage -->
+<div class="home" id="homePage">
+  <div class="logo">Rex<span>Search</span></div>
+  <div class="tagline">Fast. Private. Powerful.</div>
+  <div class="search-box">
+    <input type="text" class="search-input" id="searchInput" placeholder="Search the web..." autofocus>
+    <button class="search-btn" onclick="doSearch()">Search</button>
+  </div>
+  <div class="stats" id="stats">Loading...</div>
+</div>
+
+<!-- Results Page -->
+<div class="results-page" id="resultsPage" style="display:none">
+  <div class="results-header">
+    <div class="logo" onclick="goHome()">Rex<span>Search</span></div>
+    <div class="results-search">
+      <input type="text" class="search-input" id="searchInput2">
+      <button class="search-btn" onclick="doSearch()">Search</button>
+    </div>
+  </div>
+  <div class="results-meta" id="resultsMeta"></div>
+  <div id="resultsContainer"></div>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+let currentPage = 1;
+let currentQuery = '';
+
+// Load stats
+fetch('/api/stats').then(r => r.json()).then(data => {
+  document.getElementById('stats').innerHTML = 
+    `Indexing <b>${data.pages}</b> pages · ${data.size} · Powered by <a href="https://github.com/anserabdullah791-collab/rex-language">Rex Engine</a>`;
+});
+
+// Search on Enter
+document.getElementById('searchInput').addEventListener('keypress', e => {
+  if (e.key === 'Enter') doSearch();
+});
+
+function goHome() {
+  document.getElementById('homePage').style.display = 'flex';
+  document.getElementById('resultsPage').style.display = 'none';
+  document.getElementById('searchInput').value = '';
+}
+
+async function doSearch() {
+  const input = document.getElementById('searchInput');
+  const input2 = document.getElementById('searchInput2');
+  const query = (input.value || input2.value || '').trim();
+  
+  if (!query) return;
+  
+  currentQuery = query;
+  currentPage = 1;
+  
+  // Show results page
+  document.getElementById('homePage').style.display = 'none';
+  document.getElementById('resultsPage').style.display = 'block';
+  document.getElementById('searchInput2').value = query;
+  
+  await fetchResults();
+}
+
+async function fetchResults() {
+  const container = document.getElementById('resultsContainer');
+  const meta = document.getElementById('resultsMeta');
+  container.innerHTML = '<div class="loading">Searching...</div>';
+  
+  try {
+    const res = await fetch(`/api/search?q=${encodeURIComponent(currentQuery)}&page=${currentPage}&limit=10`);
+    const data = await res.json();
+    
+    if (data.error) {
+      container.innerHTML = `<div class="no-results"><h3>Error</h3><p>${data.error}</p></div>`;
+      return;
+    }
+    
+    meta.innerHTML = `Found <b>${data.total}</b> results in <span class="time">${data.time}</span>`;
+    
+    if (data.results.length === 0) {
+      container.innerHTML = `
+        <div class="no-results">
+          <h3>No results found</h3>
+          <p>Try different keywords or crawl more pages</p>
+        </div>`;
+      return;
+    }
+    
+    container.innerHTML = data.results.map(r => `
+      <div class="result-item">
+        <div class="result-url">
+          <span>${r.url}</span>
+          <span class="result-domain">${r.domain}</span>
+        </div>
+        <a href="${r.url}" class="result-title" target="_blank">${r.title}</a>
+        <div class="result-desc">${r.description || r.snippet || 'No description available'}</div>
+        <span class="result-score">Score: ${r.score}</span>
+      </div>
+    `).join('');
+    
+    // Pagination
+    const pagination = document.getElementById('pagination');
+    const hasNext = data.results.length === 10;
+    pagination.innerHTML = `
+      <button onclick="prevPage()" ${currentPage === 1 ? 'disabled' : ''}>← Previous</button>
+      <span style="padding:8px 16px;color:#666">Page ${currentPage}</span>
+      <button onclick="nextPage()" ${!hasNext ? 'disabled' : ''}>Next →</button>
+    `;
+  } catch (e) {
+    container.innerHTML = `<div class="no-results"><h3>Connection Error</h3><p>${e.message}</p></div>`;
+  }
+}
+
+function prevPage() {
+  if (currentPage > 1) { currentPage--; fetchResults(); window.scrollTo(0,0); }
+}
+
+function nextPage() {
+  currentPage++; fetchResults(); window.scrollTo(0,0);
+}
+</script>
+
+<div class="footer">
+  Rex Search Engine v1.0 — Built by <a href="https://github.com/anserabdullah791-collab/rex-language">Digital Creators</a>
+</div>
+
+</body>
+</html>
