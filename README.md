@@ -2,9 +2,32 @@
 
 > The World's Simplest Programming Language — No semicolons. No brackets. No quotes needed. Just write English.
 
-Rex is a unified programming language designed to replace Python, HTML, CSS, and JavaScript with one simple, intuitive syntax. Write web pages, logic, functions, classes, and styles — all in plain English (or Urdu).
+Rex is a unified programming language designed to replace Python, HTML, CSS, and JavaScript with one simple, intuitive syntax. Write web pages, logic, functions, classes, business profiles, and styles — all in plain English (or Urdu). Now with 20+ built-in modules including cybersecurity, HTTP networking, regex, logging, OS access, colors, and business profiles.
 
 Created by **Abdullah Anser** (Director) and **Box** (AI CEO) at **Digital Creators**.
+
+## About Rex
+
+Rex (ریکس) is the world's simplest programming language — designed to replace Python, HTML, CSS, and JavaScript with a single, intuitive syntax. No semicolons. No brackets. No quotes needed. Just write English (or Urdu).
+
+Rex is a **general-purpose** language that handles:
+1. *Programming* — Variables, functions, loops, classes, inheritance, pattern matching
+2. *Web Development* — Full HTML page generation with CSS and JavaScript auto-generation
+3. *Business Profiles* — Create professional business profiles with one import (NEW v6.1)
+4. *Cybersecurity* — SHA256/512, MD5, AES encryption, HMAC, password hashing, tokens
+5. *Networking* — HTTP GET/POST/PUT/DELETE, fetch URLs, build APIs
+6. *System Access* — OS info, shell commands, environment variables, file operations
+7. *Data Processing* — Regex, JSON parsing, string manipulation, arrays, dictionaries
+
+### Why Rex?
+
+- *Simplest syntax on Earth* — if you can write English, you can write Rex
+- *Bilingual* — full Urdu keyword support (dikha, agar, jab, khatam, etc.)
+- *One language, everything* — no need to learn 4 separate languages
+- *50/50 model* — you write structure, Rex auto-generates styling and logic
+- *51 built-in tests* — every feature tested and verified
+- *Open source* — MIT license, available on npm and GitHub
+
 
 ## What's New in v6.0
 
@@ -19,7 +42,7 @@ Created by **Abdullah Anser** (Director) and **Box** (AI CEO) at **Digital Creat
 - **Data Structures** — `unique()`, `merge()`, `keys()`, `values()`, `entries()`, `set()`
 - **File Operations** — `copyfile()`, `delfile()`, `mkdir()`, `filesize()`, `modified()`
 - **System Access** — `whoami()`, `cwd()`, `shell()`, `env()`, `args()`
-- **51 Tests Passing** — Full test suite covering all v5.1 + v6.0 features
+- **50 Tests Passing — Full test suite covering all v5.1 + v6.0 features
 
 ## What's New in v6.1
 
@@ -553,10 +576,10 @@ node rex.js serve .
 
 ## VS Code Extension
 
-Install `rex-language-6.0.0.vsix` from the `rex-vscode/` folder:
+Install `rex-language-6.1.0.vsix` from the `rex-vscode/` folder:
 
 ```bash
-code --install-extension rex-language-6.0.0.vsix
+code --install-extension rex-language-6.1.0.vsix
 ```
 
 Features:
@@ -674,6 +697,9 @@ business.saveHtml(profile, "profile.html")
 business.saveWeb(profile, "profile.rexweb")
 ```
 
+### Business Profile (v6.1)
+`create`, `setTagline`, `setDescription`, `setCategory`, `setAddress`, `setPhone`, `setEmail`, `setWebsite`, `setLogo`, `setHours`, `addService`, `addMember`, `addImage`, `addSocial`, `save`, `load`, `toHtml`, `toWeb`, `saveHtml`, `saveWeb`, `list`
+
 ### Data Structures (v6.0)
 `unique`, `merge`, `keys`, `values`, `entries`, `set`
 
@@ -695,6 +721,7 @@ business.saveWeb(profile, "profile.rexweb")
 | `os` (v6.0) | platform, arch, cpu, cpus, memory, freememory, hostname, uptime, homedir, tmpdir, shell, env, args |
 | `color` (v6.0) | hex, rgb, random, invert, lighten, darken |
 | `logger` (v6.0) | info, warn, error, debug, success, fatal |
+| `business` (v6.1) | create, setTagline, setDescription, setCategory, setAddress, setPhone, setEmail, setWebsite, setLogo, setHours, addService, addMember, addImage, addSocial, save, load, toHtml, toWeb, saveHtml, saveWeb, list |
 | `business` (v6.1) | create, setTagline, setDescription, setCategory, setAddress, setPhone, setEmail, setWebsite, setLogo, setHours, addService, addMember, addImage, addSocial, save, load, toHtml, toWeb, saveHtml, saveWeb, list |
 
 ---

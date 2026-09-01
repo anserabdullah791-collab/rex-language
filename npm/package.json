@@ -1,7 +1,7 @@
 {
   "name": "rex-lang",
-  "version": "6.0.0",
-  "description": "Rex v6.0 \u2014 Cybersecurity, HTTP, Regex, Real-time, Logging, Color, OOP. The World's #1 Simplest Programming Language.",
+  "version": "6.1.0",
+  "description": "Cex v6.1 \u2014 Cybersecurity, HTTP, Regex, Logging, OS, Color, Business Profiles, OOP. The World's #1 Simplest Programming Language.",
   "main": "rex.js",
   "bin": {
     "rex": "./bin/rex.js"

@@ -58,7 +58,7 @@ const KEYWORDS = {
   try: 'TRY',
   catch: 'CATCH',
   // v5.1 new keywords
-  class: 'CLASS', classs: 'CLASS', category: 'CLASS',
+  class: 'CLASS', classs: 'CLASS',
   new: 'NEW', naya: 'NEW',
   this: 'THIS', yeh: 'THIS',
   import: 'IMPORT', laao: 'IMPORT',
@@ -1536,7 +1536,7 @@ class Interpreter {
         addSocial: (profile, platform, url) => { profile.social[platform] = url; return profile; },
         
         // Get profile field
-        get: (profile, field) => profile[field] || '',
+        field: (profile, field) => profile[field] || '',
         
         // Save profile as JSON
         save: (profile, filepath) => {
@@ -2501,8 +2501,17 @@ import logger as lg
 lg.info System started
 lg.success All tests passed
 
+# v6.1: Import business
+import business
+bprofile = business.create("Test Corp")
+business.setTagline(bprofile, "We test things")
+business.setCategory(bprofile, "Testing")
+business.addService(bprofile, "Unit Testing")
+p BusinessName: {business.field(bprofile, "name")}
+p BusinessTag: {business.field(bprofile, "tagline")}
+
 print ""
-print "=== All 50 tests passed! Rex v6.0 ==="`;
+print "=== All 51 tests passed! Rex v6.1 ==="`;
   
   fs.writeFileSync('/tmp/rex_test.rex', testCode);
   console.log(`Running Rex v${VERSION} JS test suite...\n`);
