@@ -5,7 +5,7 @@
  *
  * Created by: Director Abdullah Anser & Box (CEO)
  * Date: August 15, 2026
- * Updated: September 1, 2026 — v6.0 (Cybersecurity, HTTP, Regex, Real-time, Logging, Color, OS, Advanced Math/String)
+ * Updated: September 1, 2026 — v6.1 (Business Profile module) (Cybersecurity, HTTP, Regex, Real-time, Logging, Color, OS, Advanced Math/String)
  *
  * Usage:
  *   node rex.js run hello.rex
@@ -25,7 +25,7 @@ const os = require('os');
 const net = require('net');
 const { execSync } = require('child_process');
 
-const VERSION = '6.0';
+const VERSION = '6.1';
 
 // ============================
 // KEYWORDS
@@ -1491,6 +1491,202 @@ class Interpreter {
       };
       this.importedModules[moduleName] = mod;
       if (alias) scope[alias] = mod; else scope.fs = mod;
+      return;
+    }
+    
+    // v6.1: Business Profile module
+    if (moduleName === 'business' || moduleName === 'Business') {
+      const mod = {
+        // Create a new business profile — just pass the name
+        create: (name) => {
+          return {
+            name: name || 'My Business',
+            tagline: '',
+            description: '',
+            category: 'General',
+            address: '',
+            phone: '',
+            email: '',
+            website: '',
+            logo: '',
+            hours: '',
+            social: {},
+            services: [],
+            gallery: [],
+            team: [],
+            created: new Date().toISOString()
+          };
+        },
+        
+        // Set profile fields (builder pattern — very Rex-like)
+        setTagline: (profile, val) => { profile.tagline = val; return profile; },
+        setDescription: (profile, val) => { profile.description = val; return profile; },
+        setCategory: (profile, val) => { profile.category = val; return profile; },
+        setAddress: (profile, val) => { profile.address = val; return profile; },
+        setPhone: (profile, val) => { profile.phone = val; return profile; },
+        setEmail: (profile, val) => { profile.email = val; return profile; },
+        setWebsite: (profile, val) => { profile.website = val; return profile; },
+        setLogo: (profile, val) => { profile.logo = val; return profile; },
+        setHours: (profile, val) => { profile.hours = val; return profile; },
+        
+        // Add services, team, gallery, social
+        addService: (profile, serviceName) => { profile.services.push(serviceName); return profile; },
+        addMember: (profile, name, role) => { profile.team.push({ name: name, role: role || '' }); return profile; },
+        addImage: (profile, imageUrl) => { profile.gallery.push(imageUrl); return profile; },
+        addSocial: (profile, platform, url) => { profile.social[platform] = url; return profile; },
+        
+        // Get profile field
+        get: (profile, field) => profile[field] || '',
+        
+        // Save profile as JSON
+        save: (profile, filepath) => {
+          const data = JSON.stringify(profile, null, 2);
+          fs.writeFileSync(path.join(this.baseDir, filepath), data);
+          return 'saved';
+        },
+        
+        // Load profile from JSON
+        load: (filepath) => {
+          const data = fs.readFileSync(path.join(this.baseDir, filepath), 'utf-8');
+          return JSON.parse(data);
+        },
+        
+        // Generate HTML business profile page
+        toHtml: (profile) => {
+          let servicesHtml = '';
+          for (let i = 0; i < profile.services.length; i++) {
+            servicesHtml += '<div class="service-card"><h3>' + profile.services[i] + '</h3></div>\n';
+          }
+          let galleryHtml = '';
+          for (let i = 0; i < profile.gallery.length; i++) {
+            galleryHtml += '<img src="' + profile.gallery[i] + '" style="width:200px;height:150px;object-fit:cover;border-radius:8px;">\n';
+          }
+          let socialHtml = '';
+          const socialKeys = Object.keys(profile.social);
+          for (let i = 0; i < socialKeys.length; i++) {
+            socialHtml += '<a href="' + profile.social[socialKeys[i]] + '" style="color:#00d4ff;margin-right:15px;">' + socialKeys[i] + '</a>\n';
+          }
+          let teamHtml = '';
+          for (let i = 0; i < profile.team.length; i++) {
+            teamHtml += '<div class="team-card"><h4>' + profile.team[i].name + '</h4><p>' + profile.team[i].role + '</p></div>\n';
+          }
+          
+          return '<!DOCTYPE html>\n<html lang="en">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>' + profile.name + ' — Business Profile</title>\n<style>\n' +
+            '* { margin: 0; padding: 0; box-sizing: border-box; }\n' +
+            'body { font-family: -apple-system, sans-serif; background: #0a0a0f; color: #e8e8e8; }\n' +
+            '.header { background: linear-gradient(135deg, #0a0a0f, #1a1a2e); padding: 60px 20px; text-align: center; }\n' +
+            '.header h1 { font-size: 42px; background: linear-gradient(135deg, #00d4ff, #0066ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; }\n' +
+            '.header .tagline { color: #888; font-size: 18px; margin-bottom: 10px; }\n' +
+            '.header .category { color: #00d4ff; font-size: 14px; padding: 4px 12px; background: rgba(0,212,255,0.1); border-radius: 20px; display: inline-block; }\n' +
+            '.content { max-width: 800px; margin: 0 auto; padding: 40px 20px; }\n' +
+            '.section { margin-bottom: 40px; }\n' +
+            '.section h2 { font-size: 24px; margin-bottom: 15px; color: #00d4ff; }\n' +
+            '.section p { color: #999; line-height: 1.6; font-size: 15px; }\n' +
+            '.info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; }\n' +
+            '.info-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); }\n' +
+            '.info-card h4 { color: #666; font-size: 12px; text-transform: uppercase; margin-bottom: 6px; }\n' +
+            '.info-card p { color: #e8e8e8; font-size: 15px; }\n' +
+            '.service-card { background: rgba(255,255,255,0.03); padding: 20px; border-radius: 12px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.05); }\n' +
+            '.service-card h3 { color: #e8e8e8; }\n' +
+            '.team-card { background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px; margin-bottom: 10px; }\n' +
+            '.team-card h4 { color: #e8e8e8; }\n' +
+            '.team-card p { color: #999; }\n' +
+            '.gallery { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 15px; }\n' +
+            '.footer { text-align: center; padding: 30px; color: #333; font-size: 13px; }\n' +
+            '</style>\n</head>\n<body>\n' +
+            '<div class="header">\n' +
+            (profile.logo ? '  <img src="' + profile.logo + '" alt="' + profile.name + '" style="width:80px;height:80px;border-radius:50%;margin-bottom:15px;">\n' : '') +
+            '  <h1>' + profile.name + '</h1>\n' +
+            (profile.tagline ? '  <div class="tagline">' + profile.tagline + '</div>\n' : '') +
+            '  <div class="category">' + profile.category + '</div>\n' +
+            '</div>\n' +
+            '<div class="content">\n' +
+            (profile.description ? '<div class="section"><h2>About</h2><p>' + profile.description + '</p></div>\n' : '') +
+            '<div class="section"><h2>Contact Information</h2><div class="info-grid">\n' +
+            (profile.address ? '<div class="info-card"><h4>Address</h4><p>' + profile.address + '</p></div>\n' : '') +
+            (profile.phone ? '<div class="info-card"><h4>Phone</h4><p>' + profile.phone + '</p></div>\n' : '') +
+            (profile.email ? '<div class="info-card"><h4>Email</h4><p>' + profile.email + '</p></div>\n' : '') +
+            (profile.website ? '<div class="info-card"><h4>Website</h4><p>' + profile.website + '</p></div>\n' : '') +
+            (profile.hours ? '<div class="info-card"><h4>Hours</h4><p>' + profile.hours + '</p></div>\n' : '') +
+            '</div></div>\n' +
+            (profile.services.length > 0 ? '<div class="section"><h2>Services</h2>\n' + servicesHtml + '</div>\n' : '') +
+            (profile.gallery.length > 0 ? '<div class="section"><h2>Gallery</h2><div class="gallery">\n' + galleryHtml + '</div></div>\n' : '') +
+            (profile.team.length > 0 ? '<div class="section"><h2>Team</h2>\n' + teamHtml + '</div>\n' : '') +
+            (socialKeys.length > 0 ? '<div class="section"><h2>Connect</h2>\n' + socialHtml + '</div>\n' : '') +
+            '</div>\n' +
+            '<div class="footer">' + profile.name + ' — Business Profile<br>Generated by Rex Language</div>\n' +
+            '</body>\n</html>';
+        },
+        
+        // Save as HTML file
+        saveHtml: (profile, filepath) => {
+          const html = mod.toHtml(profile);
+          fs.writeFileSync(path.join(this.baseDir, filepath), html);
+          return 'saved';
+        },
+        
+        // Generate .rexweb source
+        toWeb: (profile) => {
+          let web = '# ' + profile.name + ' — Business Profile\n# Generated by Rex Language\npage\n';
+          web += '  heading: ' + profile.name + '\n';
+          if (profile.tagline) web += '  subtitle: ' + profile.tagline + '\n';
+          web += '  text: ' + profile.category + '\n';
+          web += '  container\n';
+          if (profile.description) {
+            web += '    section\n      h2: About\n      text: ' + profile.description + '\n    end\n';
+          }
+          web += '    section\n      h2: Contact\n';
+          if (profile.address) web += '      text: Address: ' + profile.address + '\n';
+          if (profile.phone) web += '      text: Phone: ' + profile.phone + '\n';
+          if (profile.email) web += '      text: Email: ' + profile.email + '\n';
+          if (profile.website) web += '      text: Website: ' + profile.website + '\n';
+          if (profile.hours) web += '      text: Hours: ' + profile.hours + '\n';
+          web += '    end\n';
+          if (profile.services.length > 0) {
+            web += '    section\n      h2: Services\n      list\n';
+            for (let i = 0; i < profile.services.length; i++) {
+              web += '        item: ' + profile.services[i] + '\n';
+            }
+            web += '      end\n    end\n';
+          }
+          if (profile.team.length > 0) {
+            web += '    section\n      h2: Team\n      list\n';
+            for (let i = 0; i < profile.team.length; i++) {
+              web += '        item: ' + profile.team[i].name + ' — ' + profile.team[i].role + '\n';
+            }
+            web += '      end\n    end\n';
+          }
+          web += '  end\nstyle\n';
+          web += '  heading: font-size: 42px color: #00d4ff\n';
+          web += '  container: max-width: 800px margin: auto padding: 40px\n';
+          web += '  h2: color: #00d4ff\n';
+          web += '  text: color: #999\n';
+          web += 'end\n';
+          return web;
+        },
+        
+        // Save as .rexweb file
+        saveWeb: (profile, filepath) => {
+          const web = mod.toWeb(profile);
+          fs.writeFileSync(path.join(this.baseDir, filepath), web);
+          return 'saved';
+        },
+        
+        // List all profiles in a directory
+        list: (dir) => {
+          const dirPath = path.join(this.baseDir, dir || 'profiles');
+          if (!fs.existsSync(dirPath)) return [];
+          return fs.readdirSync(dirPath)
+            .filter(f => f.endsWith('.json'))
+            .map(f => {
+              try { return JSON.parse(fs.readFileSync(path.join(dirPath, f), 'utf-8')); }
+              catch(e) { return null; }
+            })
+            .filter(p => p !== null);
+        }
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.business = mod;
       return;
     }
     

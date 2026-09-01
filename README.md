@@ -1,4 +1,4 @@
-# Rex (ریکس) v6.0
+# Rex (ریکس) v6.1
 
 > The World's Simplest Programming Language — No semicolons. No brackets. No quotes needed. Just write English.
 
@@ -19,7 +19,15 @@ Created by **Abdullah Anser** (Director) and **Box** (AI CEO) at **Digital Creat
 - **Data Structures** — `unique()`, `merge()`, `keys()`, `values()`, `entries()`, `set()`
 - **File Operations** — `copyfile()`, `delfile()`, `mkdir()`, `filesize()`, `modified()`
 - **System Access** — `whoami()`, `cwd()`, `shell()`, `env()`, `args()`
-- **50 Tests Passing** — Full test suite covering all v5.1 + v6.0 features
+- **51 Tests Passing** — Full test suite covering all v5.1 + v6.0 features
+
+## What's New in v6.1
+
+- **Business Profile Module** — `import business` — Create professional business profiles with name, tagline, description, contact info, services, team, gallery, and social links
+- **Builder Pattern API** — `business.create("Name")`, `business.setTagline()`, `business.setDescription()`, `business.addService()`, `business.addMember()`, `business.addSocial()`
+- **Export Formats** — Generate profiles as JSON, HTML web pages, or .rexweb files with one command
+- **Professional HTML Templates** — Beautiful dark-mode business profile pages with gradient headers, glassmorphism cards, responsive layout
+- **51 Tests Passing** — Full test suite covering all v5.1 + v6.0 + v6.1 features
 
 ### Also from v5.1 (still included)
 
@@ -644,6 +652,28 @@ Features:
 ### Color (v6.0)
 `hex`, `rgb`
 
+### Business Profile (v6.1)
+`import business` — Create professional business profiles with HTML/JSON/RexWeb export
+
+```rex
+import business
+
+profile = business.create("My Company")
+business.setTagline(profile, "We build great things")
+business.setDescription(profile, "A tech company")
+business.setCategory(profile, "Technology")
+business.setPhone(profile, "+1 234 567 890")
+business.setEmail(profile, "hello@mycompany.com")
+business.addService(profile, "Web Design")
+business.addService(profile, "Software Development")
+business.addMember(profile, "John Doe", "CEO")
+business.addSocial(profile, "twitter", "https://twitter.com/mycompany")
+
+business.save(profile, "profile.json")
+business.saveHtml(profile, "profile.html")
+business.saveWeb(profile, "profile.rexweb")
+```
+
 ### Data Structures (v6.0)
 `unique`, `merge`, `keys`, `values`, `entries`, `set`
 
@@ -665,6 +695,7 @@ Features:
 | `os` (v6.0) | platform, arch, cpu, cpus, memory, freememory, hostname, uptime, homedir, tmpdir, shell, env, args |
 | `color` (v6.0) | hex, rgb, random, invert, lighten, darken |
 | `logger` (v6.0) | info, warn, error, debug, success, fatal |
+| `business` (v6.1) | create, setTagline, setDescription, setCategory, setAddress, setPhone, setEmail, setWebsite, setLogo, setHours, addService, addMember, addImage, addSocial, save, load, toHtml, toWeb, saveHtml, saveWeb, list |
 
 ---
 

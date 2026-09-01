@@ -1,0 +1,41 @@
+{
+  "name": "Digital Creators",
+  "tagline": "World's Most Premium Digital Creative Agency",
+  "description": "We create exceptional digital experiences that help businesses grow and brands stand out.",
+  "category": "Digital Creative Agency",
+  "address": "Pakistan",
+  "phone": "+92 300 0000000",
+  "email": "contact@digitalcreators.com",
+  "website": "https://digitalcreators.com",
+  "logo": "",
+  "hours": "Mon-Sat: 9AM - 7PM",
+  "social": {
+    "facebook": "https://facebook.com/digitalcreators",
+    "instagram": "https://instagram.com/digitalcreators",
+    "linkedin": "https://linkedin.com/company/digitalcreators"
+  },
+  "services": [
+    "Web Development",
+    "Software Development",
+    "Mobile Apps",
+    "Brand Design",
+    "Video Production",
+    "Digital Advertising"
+  ],
+  "gallery": [],
+  "team": [
+    {
+      "name": "Abdullah Anser",
+      "role": "Director & Owner"
+    },
+    {
+      "name": "Box",
+      "role": "CEO"
+    },
+    {
+      "name": "Robert",
+      "role": "Executive Assistant"
+    }
+  ],
+  "created": "2026-09-01T07:57:40.570Z"
+}
