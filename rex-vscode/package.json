@@ -28,7 +28,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/digitalcreators/rex-language"
+    "url": "https://github.com/anserabdullah791-collab/rex-language"
   },
   "activationEvents": [
     "onLanguage:rex",

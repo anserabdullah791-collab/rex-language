@@ -1,7 +1,7 @@
 {
   "name": "rex-lang",
-  "version": "5.0.0",
-  "description": "Rex (ریکس) — The World's Simplest Programming Language. No semicolons, no brackets, no quotes. Just write English or Urdu.",
+  "version": "5.1.0",
+  "description": "Rex (\u0631\u06cc\u06a9\u0633) \u2014 The World's Simplest Programming Language. Classes, imports, JSON, date/time, stdlib. No semicolons, no brackets, no quotes.",
   "main": "rex.js",
   "bin": {
     "rex": "./bin/rex.js"

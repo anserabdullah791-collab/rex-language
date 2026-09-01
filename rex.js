@@ -1,10 +1,11 @@
 /**
- * Rex (ریکس) Programming Language v5.0
+ * Rex (ریکس) Programming Language v5.1
  * JavaScript Interpreter — No Python needed!
  * Runs in Node.js and browsers.
  *
  * Created by: Director Abdullah Anser & Box (CEO)
  * Date: August 15, 2026
+ * Updated: September 1, 2026 — v5.1 (Classes, Import, JSON, HTTP, Stdlib)
  *
  * Usage:
  *   node rex.js run hello.rex
@@ -17,9 +18,10 @@
 const fs = require('fs');
 const path = require('path');
 const http = require('http');
+const https = require('https');
 const readline = require('readline');
 
-const VERSION = '5.0';
+const VERSION = '5.1';
 
 // ============================
 // KEYWORDS
@@ -51,6 +53,19 @@ const KEYWORDS = {
   then: 'THEN',
   try: 'TRY',
   catch: 'CATCH',
+  // v5.1 new keywords
+  class: 'CLASS', classs: 'CLASS', category: 'CLASS',
+  new: 'NEW', naya: 'NEW',
+  this: 'THIS', yeh: 'THIS',
+  import: 'IMPORT', laao: 'IMPORT',
+  from: 'FROM',
+  extends: 'EXTENDS', inherit: 'EXTENDS',
+  as: 'AS',
+  export: 'EXPORT', bhejo: 'EXPORT',
+  static: 'STATIC',
+  match: 'MATCH', matchh: 'MATCH',
+  case: 'CASE',
+  default: 'DEFAULT',
 };
 
 // ============================
@@ -88,7 +103,6 @@ function tokenize(source) {
     if (pRegex.test(stripped)) {
       const rest = stripped.slice(2).trim();
       if (rest.startsWith('{') && rest.endsWith('}')) {
-        // Check if single expression or multiple interpolations
         let braceDepth = 0;
         let singleExpr = true;
         for (let ci = 0; ci < rest.length; ci++) {
@@ -178,12 +192,13 @@ function tokenizeLine(line, lineNum) {
     }
     
     // Single-char operators
-    if ('+-*/%^%=<>()[]{},:'.includes(line[pos])) {
+    if ('+-*/%^%=<>()[]{},:.'.includes(line[pos])) {
       const opMap = {
         '+': 'PLUS', '-': 'MINUS', '*': 'MULT', '/': 'DIV',
         '%': 'MOD', '^': 'POW', '=': 'ASSIGN', '<': 'LT',
         '>': 'GT', '(': 'LPAREN', ')': 'RPAREN',
-        '[': 'LBRACKET', ']': 'RBRACKET', ',': 'COMMA', ':': 'COLON'
+        '[': 'LBRACKET', ']': 'RBRACKET', ',': 'COMMA', ':': 'COLON',
+        '.': 'DOT'
       };
       tokens.push(new Token(opMap[line[pos]] || 'OP', line[pos], lineNum));
       pos++;
@@ -193,7 +208,7 @@ function tokenizeLine(line, lineNum) {
     // Identifiers and keywords
     if (line[pos].match(/[a-zA-Z_]/)) {
       let end = pos + 1;
-      while (end < line.length && (line[end].match(/[a-zA-Z0-9_.]/))) end++;
+      while (end < line.length && (line[end].match(/[a-zA-Z0-9_]/))) end++;
       const word = line.slice(pos, end);
       
       if (KEYWORDS[word]) tokens.push(new Token(KEYWORDS[word], word, lineNum));
@@ -256,7 +271,13 @@ class Parser {
     if (tok.type === 'BREAK') { this.advance(); return ['BREAK']; }
     if (tok.type === 'SKIP') { this.advance(); return ['SKIP']; }
     if (tok.type === 'TRY') return this.parseTry();
+    if (tok.type === 'CLASS') return this.parseClass();
+    if (tok.type === 'IMPORT') return this.parseImport();
+    if (tok.type === 'EXPORT') return this.parseExport();
+    if (tok.type === 'MATCH') return this.parseMatch();
     if (tok.type === 'END') { this.advance(); return null; }
+    if (tok.type === 'NEW') return this.parseNewStatement();
+    if (tok.type === 'THIS') { this.advance(); return this.parseThisStatement(); }
     if (tok.type === 'IDENT') return this.parseExprStatement();
     throw new SyntaxError(`Line ${tok.line}: Unexpected '${tok.value}'`);
   }
@@ -340,7 +361,7 @@ class Parser {
   parseReturn() {
     this.expect('RETURN');
     if (['END', 'EOF', 'ELSE'].includes(this.peek().type)) return ['RETURN', null];
-    if (['NUMBER', 'STRING', 'IDENT', 'LPAREN', 'TRUE', 'FALSE', 'NULL', 'LBRACKET'].includes(this.peek().type)) {
+    if (['NUMBER', 'STRING', 'IDENT', 'LPAREN', 'TRUE', 'FALSE', 'NULL', 'LBRACKET', 'NEW'].includes(this.peek().type)) {
       return ['RETURN', this.parseExpression()];
     }
     return ['RETURN', null];
@@ -357,13 +378,152 @@ class Parser {
     return ['TRY', tryBody, catchBody];
   }
   
+  // v5.1: Class parsing
+  parseClass() {
+    this.expect('CLASS');
+    const name = this.expect('IDENT').value;
+    let parent = null;
+    if (this.peek().type === 'EXTENDS') {
+      this.advance();
+      parent = this.expect('IDENT').value;
+    }
+    const body = this.parseClassBody();
+    return ['CLASS', name, parent, body];
+  }
+  
+  // v5.1: Parse class body — methods defined as name(params) without func keyword
+  parseClassBody() {
+    const statements = [];
+    while (true) {
+      const tok = this.peek();
+      if (tok.type === 'EOF') throw new SyntaxError('Missing end — class was never closed');
+      if (tok.type === 'END') { this.advance(); break; }
+      
+      // Detect method definition: IDENT followed by LPAREN
+      if (tok.type === 'IDENT' && this.peek(1).type === 'LPAREN') {
+        const methodName = this.advance().value;
+        this.expect('LPAREN');
+        const params = [];
+        while (this.peek().type !== 'RPAREN') {
+          params.push(this.expect('IDENT').value);
+          if (this.peek().type === 'COMMA') this.advance();
+        }
+        this.expect('RPAREN');
+        const methodBody = this.parseBlock();
+        statements.push(['FUNC', methodName, params, methodBody]);
+        continue;
+      }
+      
+      // Detect field assignment: IDENT = value
+      if (tok.type === 'IDENT' && this.peek(1).type === 'ASSIGN') {
+        const fieldName = this.advance().value;
+        this.advance();
+        statements.push(['ASSIGN', fieldName, this.parseExpression()]);
+        continue;
+      }
+      
+      // Support func keyword inside class
+      if (tok.type === 'FUNC') {
+        const stmt = this.parseFunc();
+        statements.push(stmt);
+        continue;
+      }
+      
+      const stmt = this.parseStatement();
+      if (stmt !== null) statements.push(stmt);
+    }
+    return statements;
+  }
+  
+  // v5.1: Import parsing
+  parseImport() {
+    this.expect('IMPORT');
+    const module = this.expect('IDENT').value;
+    let alias = null;
+    if (this.peek().type === 'AS') {
+      this.advance();
+      alias = this.expect('IDENT').value;
+    }
+    return ['IMPORT', module, alias];
+  }
+  
+  // v5.1: Export parsing
+  parseExport() {
+    this.expect('EXPORT');
+    const name = this.expect('IDENT').value;
+    return ['EXPORT', name];
+  }
+  
+  // v5.1: Match/switch parsing
+  parseMatch() {
+    this.expect('MATCH');
+    const expr = this.parseExpression();
+    const cases = [];
+    let defaultBody = null;
+    
+    while (this.peek().type !== 'END' && this.peek().type !== 'EOF') {
+      if (this.peek().type === 'CASE') {
+        this.advance();
+        const caseVal = this.parseExpression();
+        const body = this.parseBlock();
+        cases.push([caseVal, body]);
+      } else if (this.peek().type === 'DEFAULT') {
+        this.advance();
+        defaultBody = this.parseBlock();
+      } else {
+        break;
+      }
+    }
+    this.expect('END');
+    return ['MATCH', expr, cases, defaultBody];
+  }
+  
+  // v5.1: New (object instantiation)
+  parseNewStatement() {
+    this.expect('NEW');
+    const className = this.expect('IDENT').value;
+    this.expect('LPAREN');
+    const args = [];
+    while (this.peek().type !== 'RPAREN') {
+      args.push(this.parseExpression());
+      if (this.peek().type === 'COMMA') this.advance();
+      else if (this.peek().type !== 'RPAREN') break;
+    }
+    this.expect('RPAREN');
+    return ['EXPR', ['NEW', className, args]];
+  }
+  
+  parseThisStatement() {
+    if (this.peek().type === 'DOT') {
+      this.advance();
+      const prop = this.expect('IDENT').value;
+      if (this.peek().type === 'ASSIGN') {
+        this.advance();
+        return ['THIS_ASSIGN', prop, this.parseExpression()];
+      }
+      if (this.peek().type === 'LPAREN') {
+        this.advance();
+        const args = [];
+        while (this.peek().type !== 'RPAREN') {
+          args.push(this.parseExpression());
+          if (this.peek().type === 'COMMA') this.advance();
+          else if (this.peek().type !== 'RPAREN') break;
+        }
+        this.expect('RPAREN');
+        return ['THIS_CALL', prop, args];
+      }
+      return ['EXPR', ['THIS_PROP', prop]];
+    }
+    return ['EXPR', ['THIS']];
+  }
+  
   parseBlock() {
     const statements = [];
     while (true) {
       const tok = this.peek();
       if (tok.type === 'EOF') throw new SyntaxError(`Line ${tok.line}: Missing 'end' — block was never closed. Add 'end' to close it.`);
       if (tok.type === 'END') { this.advance(); break; }
-      if (['ELSE', 'CATCH'].includes(tok.type)) break;
+      if (['ELSE', 'CATCH', 'CASE', 'DEFAULT'].includes(tok.type)) break;
       const stmt = this.parseStatement();
       if (stmt !== null) statements.push(stmt);
     }
@@ -405,6 +565,26 @@ class Parser {
         return ['ARRAY_SET', name, index, this.parseExpression()];
       }
       return ['ARRAY_GET', name, index];
+    }
+    if (this.peek().type === 'DOT') {
+      this.advance();
+      const prop = this.expect('IDENT').value;
+      if (this.peek().type === 'ASSIGN') {
+        this.advance();
+        return ['PROP_SET', name, prop, this.parseExpression()];
+      }
+      if (this.peek().type === 'LPAREN') {
+        this.advance();
+        const args = [];
+        while (this.peek().type !== 'RPAREN') {
+          args.push(this.parseExpression());
+          if (this.peek().type === 'COMMA') this.advance();
+          else if (this.peek().type !== 'RPAREN') break;
+        }
+        this.expect('RPAREN');
+        return ['EXPR', ['METHOD', name, prop, args]];
+      }
+      return ['EXPR', ['PROP', name, prop]];
     }
     return ['EXPR', ['VAR', name]];
   }
@@ -491,6 +671,39 @@ class Parser {
     if (tok.type === 'TRUE') { this.advance(); return ['BOOL', true]; }
     if (tok.type === 'FALSE') { this.advance(); return ['BOOL', false]; }
     if (tok.type === 'NULL') { this.advance(); return ['NULL']; }
+    if (tok.type === 'THIS') { 
+      this.advance();
+      if (this.peek().type === 'DOT') {
+        this.advance();
+        const prop = this.expect('IDENT').value;
+        if (this.peek().type === 'LPAREN') {
+          this.advance();
+          const args = [];
+          while (this.peek().type !== 'RPAREN') {
+            args.push(this.parseExpression());
+            if (this.peek().type === 'COMMA') this.advance();
+            else if (this.peek().type !== 'RPAREN') break;
+          }
+          this.expect('RPAREN');
+          return ['THIS_METHOD', prop, args];
+        }
+        return ['THIS_PROP', prop];
+      }
+      return ['THIS'];
+    }
+    if (tok.type === 'NEW') {
+      this.advance();
+      const className = this.expect('IDENT').value;
+      this.expect('LPAREN');
+      const args = [];
+      while (this.peek().type !== 'RPAREN') {
+        args.push(this.parseExpression());
+        if (this.peek().type === 'COMMA') this.advance();
+        else if (this.peek().type !== 'RPAREN') break;
+      }
+      this.expect('RPAREN');
+      return ['NEW', className, args];
+    }
     if (tok.type === 'LPAREN') {
       this.advance();
       const expr = this.parseExpression();
@@ -512,24 +725,6 @@ class Parser {
       this.advance();
       const name = tok.value;
       
-      if (name.includes('.')) {
-        const parts = name.split('.');
-        const base = parts[0];
-        const prop = parts[1] || '';
-        if (this.peek().type === 'LPAREN') {
-          this.advance();
-          const args = [];
-          while (this.peek().type !== 'RPAREN') {
-            args.push(this.parseExpression());
-            if (this.peek().type === 'COMMA') this.advance();
-            else if (this.peek().type !== 'RPAREN') break;
-          }
-          this.expect('RPAREN');
-          return ['METHOD', base, prop, args];
-        }
-        return ['PROP', base, prop];
-      }
-      
       if (this.peek().type === 'LPAREN') {
         this.advance();
         const args = [];
@@ -547,6 +742,22 @@ class Parser {
         this.expect('RBRACKET');
         return ['ARRAY_GET', name, index];
       }
+      if (this.peek().type === 'DOT') {
+        this.advance();
+        const prop = this.expect('IDENT').value;
+        if (this.peek().type === 'LPAREN') {
+          this.advance();
+          const args = [];
+          while (this.peek().type !== 'RPAREN') {
+            args.push(this.parseExpression());
+            if (this.peek().type === 'COMMA') this.advance();
+            else if (this.peek().type !== 'RPAREN') break;
+          }
+          this.expect('RPAREN');
+          return ['METHOD', name, prop, args];
+        }
+        return ['PROP', name, prop];
+      }
       return ['VAR', name];
     }
     throw new SyntaxError(`Line ${tok.line}: Unexpected '${tok.value}'`);
@@ -563,16 +774,25 @@ class ReturnException extends Error {
 }
 
 class Interpreter {
-  constructor(outputFn) {
+  constructor(outputFn, baseDir) {
     this.globalScope = {};
     this.functions = {};
+    this.classes = {};
+    this.exports = {};
+    this.importedModules = {};
+    this.baseDir = baseDir || '.';
     this.output = outputFn || (s => console.log(s));
     this.setupBuiltins();
   }
   
   setupBuiltins() {
     this.builtins = {
-      len: a => (Array.isArray(a[0]) || typeof a[0] === 'string' || typeof a[0] === 'object') ? Object.keys(a[0] || {}).length : 0,
+      // String functions
+      len: a => {
+        if (Array.isArray(a[0]) || typeof a[0] === 'string') return a[0].length;
+        if (typeof a[0] === 'object' && a[0] !== null) return Object.keys(a[0]).length;
+        return 0;
+      },
       length: a => (Array.isArray(a[0]) || typeof a[0] === 'string') ? a[0].length : 0,
       upper: a => String(a[0]).toUpperCase(),
       lower: a => String(a[0]).toLowerCase(),
@@ -582,6 +802,19 @@ class Interpreter {
       find: a => typeof a[0] === 'string' ? a[0].indexOf(String(a[1])) : -1,
       split: a => a.length > 1 ? String(a[0]).split(a[1]) : String(a[0]).split(' '),
       join: a => a.length > 1 ? a[0].join(a[1]) : a[0].join(' '),
+      trim: a => String(a[0]).trim(),
+      starts: a => String(a[0]).startsWith(String(a[1])),
+      ends: a => String(a[0]).endsWith(String(a[1])),
+      repeat: a => String(a[0]).repeat(parseInt(a[1]) || 1),
+      format: a => {
+        let s = String(a[0]);
+        for (let i = 1; i < a.length; i++) s = s.replace('{' + (i-1) + '}', String(a[i]));
+        return s;
+      },
+      char: a => String.fromCharCode(parseInt(a[0])),
+      code: a => String(a[0]).charCodeAt(0),
+      
+      // Math functions
       random: a => a.length === 2 ? Math.floor(Math.random() * (a[1] - a[0] + 1)) + a[0] : Math.random(),
       abs: a => Math.abs(a[0]),
       round: a => Math.round(a[0]),
@@ -591,19 +824,61 @@ class Interpreter {
       pow: a => Math.pow(a[0], a[1]),
       floor: a => Math.floor(a[0]),
       ceil: a => Math.ceil(a[0]),
+      sin: a => Math.sin(a[0]),
+      cos: a => Math.cos(a[0]),
+      tan: a => Math.tan(a[0]),
+      log: a => Math.log(a[0]),
+      log10: a => Math.log10(a[0]),
+      pi: () => Math.PI,
+      e: () => Math.E,
+      
+      // Array functions
       sort: a => Array.isArray(a[0]) ? [...a[0]].sort((x,y) => x-y) : a[0],
       reverse: a => Array.isArray(a[0]) ? [...a[0]].reverse() : String(a[0]).split('').reverse().join(''),
       sum: a => Array.isArray(a[0]) ? a[0].reduce((s,x) => s+x, 0) : 0,
       push: a => { if (Array.isArray(a[0])) a[0].push(a[1]); return null; },
       pop: a => Array.isArray(a[0]) && a[0].length > 0 ? a[0].pop() : null,
       range: a => a.length === 2 ? Array.from({length: a[1]-a[0]}, (_, i) => i + a[0]) : Array.from({length: a[0]}, (_, i) => i),
-      number: a => { try { return a[0].includes('.') ? parseFloat(a[0]) : parseInt(a[0]); } catch { return 0; } },
+      
+      // Type conversion
+      number: a => { try { return String(a[0]).includes('.') ? parseFloat(a[0]) : parseInt(a[0]); } catch { return 0; } },
       text: a => String(a[0]),
       string: a => String(a[0]),
       type: a => this.getType(a[0]),
-      readfile: a => { try { return fs.readFileSync(String(a[0]), 'utf-8'); } catch { throw new Error(`File '${a[0]}' not found`); } },
-      writefile: a => { fs.writeFileSync(String(a[0]), String(a[1])); return 'ok'; },
-      exists: a => fs.existsSync(String(a[0])),
+      boolean: a => Boolean(a[0]),
+      
+      // File I/O
+      readfile: a => { try { return fs.readFileSync(path.join(this.baseDir, String(a[0])), 'utf-8'); } catch { throw new Error(`File '${a[0]}' not found`); } },
+      writefile: a => { fs.writeFileSync(path.join(this.baseDir, String(a[0])), String(a[1])); return 'ok'; },
+      exists: a => fs.existsSync(path.join(this.baseDir, String(a[0]))),
+      files: a => { try { return fs.readdirSync(path.join(this.baseDir, String(a[0]))); } catch { return []; } },
+      append: a => { fs.appendFileSync(path.join(this.baseDir, String(a[0])), String(a[1])); return 'ok'; },
+      
+      // JSON
+      jsonparse: a => { try { return JSON.parse(a[0]); } catch { throw new Error('Invalid JSON'); } },
+      jsonstring: a => { try { return JSON.stringify(a[0], null, a[1] || 2); } catch { throw new Error('Cannot stringify'); } },
+      
+      // Date/Time
+      now: () => new Date().toISOString(),
+      today: () => new Date().toISOString().split('T')[0],
+      time: () => Date.now(),
+      year: () => new Date().getFullYear(),
+      month: () => new Date().getMonth() + 1,
+      day: () => new Date().getDate(),
+      hour: () => new Date().getHours(),
+      date: a => {
+        const d = a[0] ? new Date(a[0]) : new Date();
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+      },
+      clock: () => {
+        const d = new Date();
+        return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+      },
+      
+      // System
+      os: () => process.platform,
+      version: () => VERSION,
+      exit: a => process.exit(a[0] || 0),
     };
   }
   
@@ -613,20 +888,41 @@ class Interpreter {
     if (typeof val === 'string') return 'text';
     if (Array.isArray(val)) return 'list';
     if (val === null || val === undefined) return 'null';
+    if (val && val.__rexClass) return 'object';
     return 'unknown';
   }
   
   run(ast) {
-    // Hoist all function definitions first
+    // Hoist all function and class definitions first
     for (const node of ast) {
       if (node && node[0] === 'FUNC') {
         this.functions[node[1]] = { params: node[2], body: node[3] };
+      }
+      if (node && node[0] === 'CLASS') {
+        this.processClass(node);
       }
     }
     // Then execute all statements
     for (const node of ast) {
       this.execute(node, this.globalScope);
     }
+  }
+  
+  // v5.1: Process class definition
+  processClass(node) {
+    const [, name, parent, body] = node;
+    const methods = {};
+    const fields = [];
+    
+    for (const stmt of body) {
+      if (stmt[0] === 'FUNC') {
+        methods[stmt[1]] = { params: stmt[2], body: stmt[3] };
+      } else if (stmt[0] === 'ASSIGN') {
+        fields.push([stmt[1], stmt[2]]);
+      }
+    }
+    
+    this.classes[name] = { name, parent, methods, fields };
   }
   
   execute(node, scope) {
@@ -648,11 +944,13 @@ class Interpreter {
       }
       if (typeof val === 'boolean') this.output(val ? 'true' : 'false');
       else if (val === null || val === undefined) this.output('null');
+      else if (typeof val === 'object' && !Array.isArray(val)) {
+        this.output(JSON.stringify(val, null, 0));
+      }
       else this.output(String(val));
     }
     else if (t === 'ASK') {
-      // In Node.js, use readline
-      return null; // Simplified for non-interactive
+      return null;
     }
     else if (t === 'ASSIGN') {
       const name = node[1];
@@ -696,6 +994,12 @@ class Interpreter {
           try { this.runBlock(node[3], scope); }
           catch (e) { if (e instanceof BreakException) break; if (e instanceof ContinueException) continue; throw e; }
         }
+      } else if (typeof iterable === 'number') {
+        for (let i = 0; i < iterable; i++) {
+          scope[variable] = i;
+          try { this.runBlock(node[3], scope); }
+          catch (e) { if (e instanceof BreakException) break; if (e instanceof ContinueException) continue; throw e; }
+        }
       }
     }
     else if (t === 'FUNC') {
@@ -728,6 +1032,44 @@ class Interpreter {
         arr[index] = value;
       }
     }
+    else if (t === 'PROP_SET') {
+      const obj = this.evaluate(['VAR', node[1]], scope);
+      if (obj && typeof obj === 'object') {
+        obj[node[2]] = this.evaluate(node[3], scope);
+      }
+    }
+    else if (t === 'THIS_ASSIGN') {
+      if (scope.this) {
+        scope.this[node[1]] = this.evaluate(node[2], scope);
+      }
+    }
+    else if (t === 'THIS_CALL') {
+      if (scope.this && scope.this.__methods[node[1]]) {
+        this.callMethod(scope.this, scope.this.__methods[node[1]], node[2], scope);
+      }
+    }
+    else if (t === 'CLASS') {
+      this.processClass(node);
+    }
+    else if (t === 'IMPORT') {
+      this.doImport(node[1], node[2], scope);
+    }
+    else if (t === 'EXPORT') {
+      const val = this.evaluate(['VAR', node[1]], scope);
+      this.exports[node[1]] = val;
+    }
+    else if (t === 'MATCH') {
+      const val = this.evaluate(node[1], scope);
+      let matched = false;
+      for (const [caseVal, caseBody] of node[2]) {
+        if (val === this.evaluate(caseVal, scope)) {
+          this.runBlock(caseBody, scope);
+          matched = true;
+          break;
+        }
+      }
+      if (!matched && node[3]) this.runBlock(node[3], scope);
+    }
     else if (t === 'EXPR') {
       this.evaluate(node[1], scope);
     }
@@ -737,21 +1079,192 @@ class Interpreter {
     for (const stmt of statements) this.execute(stmt, scope);
   }
   
+  // v5.1: Import a .rex module or stdlib
+  doImport(moduleName, alias, scope) {
+    if (moduleName in this.importedModules) {
+      const mod = this.importedModules[moduleName];
+      if (alias) scope[alias] = mod;
+      else scope[moduleName] = mod;
+      return;
+    }
+    
+    // Built-in stdlib modules
+    if (moduleName === 'math' || moduleName === 'Math') {
+      const mod = {
+        sqrt: (x) => Math.sqrt(x), abs: (x) => Math.abs(x),
+        pow: (x, y) => Math.pow(x, y), floor: (x) => Math.floor(x),
+        ceil: (x) => Math.ceil(x), round: (x) => Math.round(x),
+        sin: (x) => Math.sin(x), cos: (x) => Math.cos(x),
+        tan: (x) => Math.tan(x), log: (x) => Math.log(x),
+        pi: Math.PI, e: Math.E,
+        max: (...a) => Math.max(...a), min: (...a) => Math.min(...a),
+        random: () => Math.random()
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.math = mod;
+      return;
+    }
+    if (moduleName === 'string' || moduleName === 'String') {
+      const mod = {
+        upper: (s) => String(s).toUpperCase(),
+        lower: (s) => String(s).toLowerCase(),
+        trim: (s) => String(s).trim(),
+        split: (s, d) => String(s).split(d),
+        replace: (s, a, b) => String(s).replace(a, b),
+        contains: (s, sub) => String(s).includes(sub),
+        len: (s) => String(s).length,
+        repeat: (s, n) => String(s).repeat(n),
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.string = mod;
+      return;
+    }
+    if (moduleName === 'time' || moduleName === 'Time') {
+      const mod = {
+        now: () => Date.now(),
+        date: () => new Date().toISOString(),
+        today: () => new Date().toISOString().split('T')[0],
+        year: () => new Date().getFullYear(),
+        month: () => new Date().getMonth() + 1,
+        day: () => new Date().getDate(),
+        hour: () => new Date().getHours(),
+        clock: () => {
+          const d = new Date();
+          return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}:${String(d.getSeconds()).padStart(2,'0')}`;
+        }
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.time = mod;
+      return;
+    }
+    if (moduleName === 'json' || moduleName === 'JSON') {
+      const mod = {
+        parse: (s) => JSON.parse(s),
+        stringify: (obj, indent) => JSON.stringify(obj, null, indent || 2),
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.json = mod;
+      return;
+    }
+    if (moduleName === 'fs' || moduleName === 'file') {
+      const mod = {
+        read: (p) => fs.readFileSync(path.join(this.baseDir, p), 'utf-8'),
+        write: (p, content) => { fs.writeFileSync(path.join(this.baseDir, p), content); return 'ok'; },
+        exists: (p) => fs.existsSync(path.join(this.baseDir, p)),
+        list: (p) => fs.readdirSync(path.join(this.baseDir, p)),
+        append: (p, content) => { fs.appendFileSync(path.join(this.baseDir, p), content); return 'ok'; },
+      };
+      this.importedModules[moduleName] = mod;
+      if (alias) scope[alias] = mod; else scope.fs = mod;
+      return;
+    }
+    
+    // Try to import a .rex file
+    const tryPaths = [
+      path.join(this.baseDir, moduleName + '.rex'),
+      path.join(this.baseDir, 'modules', moduleName + '.rex'),
+      path.join(this.baseDir, 'lib', moduleName + '.rex'),
+    ];
+    
+    for (const filePath of tryPaths) {
+      if (fs.existsSync(filePath)) {
+        const source = fs.readFileSync(filePath, 'utf-8');
+        const tokens = tokenize(source);
+        const parser = new Parser(tokens);
+        const ast = parser.parse();
+        const subInterpreter = new Interpreter(null, path.dirname(filePath));
+        subInterpreter.run(ast);
+        const mod = subInterpreter.exports;
+        this.importedModules[moduleName] = mod;
+        if (alias) scope[alias] = mod;
+        else scope[moduleName] = mod;
+        return;
+      }
+    }
+    
+    throw new Error(`Cannot import '${moduleName}' — module not found`);
+  }
+  
   callFunction(name, argExprs, scope) {
+    // Built-in functions
     if (this.builtins[name]) {
       const args = argExprs.map(a => this.evaluate(a, scope));
       return this.builtins[name](args);
     }
-    if (!this.functions[name]) throw new Error(`Function '${name}' not defined`);
     
-    const { params, body } = this.functions[name];
-    const args = argExprs.map(a => this.evaluate(a, scope));
-    const funcScope = {};
-    for (let i = 0; i < params.length; i++) {
-      funcScope[params[i]] = args[i] !== undefined ? args[i] : null;
+    // User-defined functions
+    if (this.functions[name]) {
+      const { params, body } = this.functions[name];
+      const args = argExprs.map(a => this.evaluate(a, scope));
+      const funcScope = { this: scope.this || null };
+      for (let i = 0; i < params.length; i++) {
+        funcScope[params[i]] = args[i] !== undefined ? args[i] : null;
+      }
+      try { this.runBlock(body, funcScope); }
+      catch (e) { if (e instanceof ReturnException) return e.value; throw e; }
+      return null;
     }
     
-    try { this.runBlock(body, funcScope); }
+    // Class constructor
+    if (this.classes[name]) {
+      return this.instantiateClass(name, argExprs, scope);
+    }
+    
+    throw new Error(`Function '${name}' not defined`);
+  }
+  
+  // v5.1: Instantiate a class
+  instantiateClass(className, argExprs, scope) {
+    const cls = this.classes[className];
+    if (!cls) throw new Error(`Class '${className}' not defined`);
+    
+    const args = argExprs.map(a => this.evaluate(a, scope));
+    
+    // Create object instance
+    const instance = {
+      __rexClass: className,
+      __class: cls,
+      __methods: { ...cls.methods },
+    };
+    
+    // Copy parent methods if inheritance
+    let currentClass = cls;
+    while (currentClass && currentClass.parent) {
+      const parent = this.classes[currentClass.parent];
+      if (!parent) break;
+      for (const [mname, method] of Object.entries(parent.methods)) {
+        if (!instance.__methods[mname]) instance.__methods[mname] = method;
+      }
+      currentClass = parent;
+    }
+    
+    // Set default field values
+    for (const [fieldName, fieldExpr] of cls.fields) {
+      instance[fieldName] = this.evaluate(fieldExpr, { this: instance });
+    }
+    
+    // Call constructor if exists
+    if (instance.__methods['init'] || instance.__methods['constructor']) {
+      const init = instance.__methods['init'] || instance.__methods['constructor'];
+      const initScope = { this: instance };
+      for (let i = 0; i < init.params.length; i++) {
+        initScope[init.params[i]] = args[i] !== undefined ? args[i] : null;
+      }
+      try { this.runBlock(init.body, initScope); }
+      catch (e) { if (e instanceof ReturnException) {} else throw e; }
+    }
+    
+    return instance;
+  }
+  
+  // v5.1: Call a method on an instance
+  callMethod(instance, method, argExprs, scope) {
+    const args = argExprs ? argExprs.map(a => this.evaluate(a, scope)) : [];
+    const methodScope = { this: instance };
+    for (let i = 0; i < method.params.length; i++) {
+      methodScope[method.params[i]] = args[i] !== undefined ? args[i] : null;
+    }
+    try { this.runBlock(method.body, methodScope); }
     catch (e) { if (e instanceof ReturnException) return e.value; throw e; }
     return null;
   }
@@ -768,7 +1281,7 @@ class Interpreter {
       const name = node[1];
       if (name in scope) return scope[name];
       if (name in this.globalScope) return this.globalScope[name];
-      return name; // bare word = string
+      return name;
     }
     if (t === 'LIST') return node[1].map(item => this.evaluate(item, scope));
     if (t === 'BINOP') return this.binop(node[1], this.evaluate(node[2], scope), this.evaluate(node[3], scope));
@@ -776,6 +1289,15 @@ class Interpreter {
       if (node[1] === 'not') return !this.evaluate(node[2], scope);
     }
     if (t === 'CALL') return this.callFunction(node[1], node[2], scope);
+    if (t === 'NEW') return this.instantiateClass(node[1], node[2], scope);
+    if (t === 'THIS') return scope.this || null;
+    if (t === 'THIS_PROP') return scope.this ? scope.this[node[1]] : null;
+    if (t === 'THIS_METHOD') {
+      if (scope.this && scope.this.__methods[node[1]]) {
+        return this.callMethod(scope.this, scope.this.__methods[node[1]], node[2], scope);
+      }
+      return null;
+    }
     if (t === 'METHOD') {
       const base = this.evaluate(['VAR', node[1]], scope);
       const args = node[3].map(a => this.evaluate(a, scope));
@@ -790,12 +1312,14 @@ class Interpreter {
       const index = this.evaluate(node[2], scope);
       if (typeof arr === 'string' && index >= 0 && index < arr.length) return arr[index];
       if (Array.isArray(arr) && index >= 0 && index < arr.length) return arr[index];
+      if (arr && typeof arr === 'object' && !Array.isArray(arr)) return arr[index];
       return null;
     }
     return null;
   }
   
   propertyAccess(val, prop) {
+    if (val === null || val === undefined) return null;
     if (prop === 'len' || prop === 'length') return (Array.isArray(val) || typeof val === 'string') ? val.length : 0;
     if (prop === 'upper') return String(val).toUpperCase();
     if (prop === 'lower') return String(val).toLowerCase();
@@ -804,18 +1328,66 @@ class Interpreter {
     if (prop === 'type') return this.getType(val);
     if (prop === 'reverse') return Array.isArray(val) ? [...val].reverse() : String(val).split('').reverse().join('');
     if (prop === 'sort') return Array.isArray(val) ? [...val].sort((a,b) => a-b) : val;
+    if (prop === 'keys') return typeof val === 'object' ? Object.keys(val) : [];
+    if (prop === 'values') return typeof val === 'object' ? Object.values(val) : [];
+    if (prop === 'string') return JSON.stringify(val, null, 2);
+    // Access object properties
+    if (typeof val === 'object' && prop in val) return val[prop];
     return null;
   }
   
   methodCall(val, method, args) {
-    if (method === 'cut' || method === 'slice') return val.slice(args[0] || 0, args[1] || val.length);
-    if (method === 'find') return typeof val === 'string' ? val.indexOf(String(args[0])) : -1;
-    if (method === 'push' || method === 'add') { if (Array.isArray(val)) val.push(args[0]); return null; }
-    if (method === 'pop') return Array.isArray(val) && val.length > 0 ? val.pop() : null;
-    if (method === 'join') return Array.isArray(val) ? val.join(args[0] || ' ') : String(val);
-    if (method === 'replace') return String(val).replace(String(args[0]), String(args[1]));
-    if (method === 'contains') return String(val).includes(String(args[0]));
-    if (method === 'split') return String(val).split(args[0] || ' ');
+    if (val === null || val === undefined) return null;
+    
+    // String methods
+    if (typeof val === 'string') {
+      if (method === 'cut' || method === 'slice') return val.slice(args[0] || 0, args[1] || val.length);
+      if (method === 'find') return val.indexOf(String(args[0]));
+      if (method === 'replace') return val.replace(String(args[0]), String(args[1]));
+      if (method === 'replaceAll') return val.split(String(args[0])).join(String(args[1]));
+      if (method === 'contains') return val.includes(String(args[0]));
+      if (method === 'split') return val.split(args[0] || ' ');
+      if (method === 'upper') return val.toUpperCase();
+      if (method === 'lower') return val.toLowerCase();
+      if (method === 'trim') return val.trim();
+      if (method === 'starts') return val.startsWith(String(args[0]));
+      if (method === 'ends') return val.endsWith(String(args[0]));
+      if (method === 'repeat') return val.repeat(parseInt(args[0]) || 1);
+      if (method === 'len' || method === 'length') return val.length;
+    }
+    
+    // Array methods
+    if (Array.isArray(val)) {
+      if (method === 'push' || method === 'add') { val.push(args[0]); return null; }
+      if (method === 'pop') return val.length > 0 ? val.pop() : null;
+      if (method === 'join') return val.join(args[0] || ' ');
+      if (method === 'find') return val.indexOf(args[0]);
+      if (method === 'contains') return val.includes(args[0]);
+      if (method === 'reverse') return [...val].reverse();
+      if (method === 'sort') return [...val].sort((a,b) => a-b);
+      if (method === 'first') return val.length > 0 ? val[0] : null;
+      if (method === 'last') return val.length > 0 ? val[val.length-1] : null;
+      if (method === 'len' || method === 'length') return val.length;
+      if (method === 'slice') return val.slice(args[0] || 0, args[1] || val.length);
+    }
+    
+    // Object/class methods
+    if (typeof val === 'object' && val.__methods && val.__methods[method]) {
+      const methodObj = val.__methods[method];
+      const methodScope = { this: val };
+      for (let i = 0; i < methodObj.params.length; i++) {
+        methodScope[methodObj.params[i]] = args[i] !== undefined ? args[i] : null;
+      }
+      try { this.runBlock(methodObj.body, methodScope); }
+      catch (e) { if (e instanceof ReturnException) return e.value; throw e; }
+      return null;
+    }
+    
+    // Object property as function
+    if (typeof val === 'object' && typeof val[method] === 'function') {
+      return val[method](...args);
+    }
+    
     return null;
   }
   
@@ -851,52 +1423,32 @@ function autoGenerateCSS(htmlParts, userCssRules) {
   const has = (s) => allHtml.includes(s);
   const notStyled = (sel) => !userCssRules[sel];
   
-  // Body — always auto-style
   if (notStyled('body')) {
     auto['body'] = [
       'margin: 0', 'padding: 0',
       'font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       'background: linear-gradient(135deg, #0f0c29, #302b63, #24243e)',
-      'color: #e8e8e8', 'min-height: 100vh',
+      'color: #e8e8e8', 'min-height: 100vh'
     ];
   }
   if (has('<header') && notStyled('header')) {
-    auto['header'] = ['text-align: center', 'padding: 60px 20px', 'background: rgba(0,0,0,0.3)'];
-  }
-  if (has('<footer') && notStyled('footer')) {
-    auto['footer'] = ['text-align: center', 'padding: 30px', 'color: #666', 'font-size: 14px'];
-  }
-  if (has('class="container"') && notStyled('.container')) {
-    auto['.container'] = ['max-width: 900px', 'margin: 0 auto', 'padding: 20px'];
+    auto['header'] = ['padding: 20px', 'text-align: center'];
   }
   if (has('class="card"') && notStyled('.card')) {
     auto['.card'] = [
-      'background: rgba(255,255,255,0.05)', 'backdrop-filter: blur(10px)',
-      'border: 1px solid rgba(255,255,255,0.1)', 'border-radius: 15px',
-      'padding: 25px', 'margin: 15px 0',
+      'background: rgba(255,255,255,0.05)',
+      'backdrop-filter: blur(10px)',
+      'border: 1px solid rgba(255,255,255,0.1)',
+      'border-radius: 15px', 'padding: 25px', 'margin: 15px 0',
+      'box-shadow: 0 8px 32px rgba(0,0,0,0.3)'
     ];
-  }
-  if (has('class="heading"') && notStyled('.heading')) {
-    auto['.heading'] = ['color: #64f3d1', 'font-size: 28px', 'margin-bottom: 10px'];
-  }
-  if (has('class="subtitle"') && notStyled('.subtitle')) {
-    auto['.subtitle'] = ['color: #aaa', 'font-size: 18px', 'text-align: center'];
-  }
-  if (has('class="paragraph"') && notStyled('.paragraph')) {
-    auto['.paragraph'] = ['color: #ddd', 'line-height: 1.6', 'font-size: 16px'];
-  }
-  if (has('class="list"') && notStyled('.list')) {
-    auto['.list'] = ['padding: 10px 20px'];
-  }
-  if (has('class="item"') && notStyled('.item')) {
-    auto['.item'] = ['margin: 8px 0', 'color: #ccc'];
   }
   if (has('<button') && notStyled('button')) {
     auto['button'] = [
       'background: linear-gradient(135deg, #0f3460, #533483)',
-      'color: white', 'border: none', 'padding: 12px 30px',
-      'border-radius: 8px', 'font-size: 16px', 'cursor: pointer',
-      'transition: all 0.3s ease',
+      'color: white', 'border: none', 'padding: 12px 24px',
+      'border-radius: 8px', 'cursor: pointer',
+      'font-size: 14px', 'transition: all 0.3s ease'
     ];
     if (notStyled('button:hover')) {
       auto['button:hover'] = ['transform: scale(1.05)', 'background: linear-gradient(135deg, #533483, #0f3460)'];
@@ -989,7 +1541,6 @@ function rexwebToHtml(source) {
         let selector = line.slice(0, colonIdx).trim();
         let propsStr = line.slice(colonIdx + 1).trim();
         
-        // Handle pseudo-selectors
         const pseudoClasses = ['hover','active','focus','visited','before','after','first-child','last-child'];
         const firstWord = propsStr.split(':')[0].trim().split(/\s/)[0];
         if (pseudoClasses.includes(firstWord)) {
@@ -1000,8 +1551,6 @@ function rexwebToHtml(source) {
           }
         }
         
-        // NO COMMAS — properties separated by space
-        // e.g. "background: black color: white padding: 20px"
         const props = [];
         const propRegex = /(\w[\w-]*):\s*([^:]+?)(?=\s+\w[\w-]*:|$)/g;
         let pm;
@@ -1012,7 +1561,6 @@ function rexwebToHtml(source) {
           props.push(`${cssProp}: ${pv}`);
         }
         
-        // Convert to CSS class selector if not standard tag
         let cssSel = selector;
         if (selector.includes(':')) {
           const parts = selector.split(':');
@@ -1051,11 +1599,9 @@ function rexwebToHtml(source) {
         content = rest;
       }
       
-      // Add class for custom elements
       const customElements = ['container','card','box','row','column','grid','heading','subtitle','paragraph','item','list'];
       if (customElements.includes(tagWord)) attrs.class = tagWord;
       
-      // Parse attributes
       const attrMatches = rest.matchAll(/(\w+):\s*(\S+)/g);
       for (const m of attrMatches) {
         const key = m[1].toLowerCase();
@@ -1083,11 +1629,10 @@ function rexwebToHtml(source) {
     }
   }
   
-  // === AUTO-GENERATE CSS (50% auto, 50% user) ===
   const autoCss = autoGenerateCSS(htmlParts, cssRules);
   const allCssRules = {};
   for (const [k, v] of Object.entries(autoCss)) allCssRules[k] = v;
-  for (const [k, v] of Object.entries(cssRules)) allCssRules[k] = v;  // user overrides
+  for (const [k, v] of Object.entries(cssRules)) allCssRules[k] = v;
   
   let cssText = '';
   for (const [selector, props] of Object.entries(allCssRules)) {
@@ -1096,7 +1641,6 @@ function rexwebToHtml(source) {
     cssText += '  }\n';
   }
   
-  // === AUTO-GENERATE JS ===
   const autoJs = autoGenerateJS(htmlParts, jsParts);
   const allJs = (jsParts.length === 0) ? autoJs : jsParts;
   const jsText = allJs.join('\n');
@@ -1126,7 +1670,7 @@ ${jsText}
 function startServer(directory = '.', port = 8000) {
   const server = http.createServer((req, res) => {
     let urlPath = req.url.split('?')[0];
-    if (urlPath === '/') urlPath = '/index.html';
+    if (urlPath === '/') urlPath = '/index.rexweb';
     
     const filePath = path.join(directory, urlPath);
     
@@ -1145,7 +1689,7 @@ function startServer(directory = '.', port = 8000) {
         const tokens = tokenize(source);
         const parser = new Parser(tokens);
         const ast = parser.parse();
-        const interpreter = new Interpreter(s => output += s + '\n');
+        const interpreter = new Interpreter(s => output += s + '\n', directory);
         interpreter.run(ast);
       } catch (e) {
         output = `Error: ${e.message}`;
@@ -1156,26 +1700,29 @@ function startServer(directory = '.', port = 8000) {
       return;
     }
     
-    // Serve static files
+    const htmlPath = filePath.replace('.rex', '.html').replace('.rexweb', '.html');
+    if (fs.existsSync(htmlPath) && fs.statSync(htmlPath).isFile()) {
+      const source = fs.readFileSync(htmlPath, 'utf-8');
+      res.writeHead(200, { 'Content-Type': 'text/html' });
+      res.end(source);
+      return;
+    }
+    
     if (fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       const ext = path.extname(filePath);
       const types = { '.html': 'text/html', '.css': 'text/css', '.js': 'text/javascript', '.json': 'application/json', '.png': 'image/png', '.jpg': 'image/jpeg', '.svg': 'image/svg+xml' };
-      res.writeHead(200, { 'Content-Type': types[ext] || 'text/plain' });
+      res.writeHead(200, { 'Content-Type': types[ext] || 'application/octet-stream' });
       fs.createReadStream(filePath).pipe(res);
       return;
     }
     
-    res.writeHead(404, { 'Content-Type': 'text/plain' });
-    res.end('404 - File not found');
+    res.writeHead(404);
+    res.end('404 — File not found');
   });
   
   server.listen(port, () => {
-    console.log(`\n  ╔════════════════════════════════════╗`);
-    console.log(`  ║  Rex Live Server v${VERSION}             ║`);
-    console.log(`  ║  Serving: ${directory.padEnd(24)} ║`);
-    console.log(`  ║  URL: http://localhost:${port}        ║`);
-    console.log(`  ║  Press Ctrl+C to stop               ║`);
-    console.log(`  ╚════════════════════════════════════╝\n`);
+    console.log(`\n  Rex v${VERSION} Live Server`);
+    console.log(`  → http://localhost:${port}\n`);
   });
 }
 
@@ -1183,31 +1730,28 @@ function startServer(directory = '.', port = 8000) {
 // FILE RUNNER
 // ============================
 function runFile(filename) {
-  if (!fs.existsSync(filename)) {
-    console.log(`Error: File '${filename}' not found`);
-    return;
-  }
-  
-  const source = fs.readFileSync(filename, 'utf-8');
+  if (!filename) { console.log('Error: No file specified'); return; }
   try {
+    const source = fs.readFileSync(filename, 'utf-8');
     const tokens = tokenize(source);
     const parser = new Parser(tokens);
     const ast = parser.parse();
-    const interpreter = new Interpreter();
+    const interpreter = new Interpreter(s => console.log(s), path.dirname(path.resolve(filename)));
     interpreter.run(ast);
   } catch (e) {
-    console.log(`Error: ${e.message}`);
+    console.error(`\n  Rex Error: ${e.message}\n`);
+    if (process.env.REX_DEBUG) console.error(e.stack);
   }
 }
 
 // ============================
-// TEST SUITE
+// TEST SUITE v5.1
 // ============================
 function runTests() {
-  const testCode = `# === REX v5.0 JS TEST SUITE ===
+  const testCode = `# === REX v5.1 JS TEST SUITE ===
 
 p Hello World
-p This is Rex v5 JS
+p This is Rex v5.1
 
 x = 42
 p {x}
@@ -1289,8 +1833,70 @@ while i <= 100
   i = i + 1
 end
 
+# v5.1: Classes
+class Animal
+  init(name, age)
+    this.name = name
+    this.age = age
+  end
+  speak()
+    p {this.name} makes a sound
+  end
+end
+
+class Dog extends Animal
+  speak()
+    p {this.name} says Woof!
+  end
+  fetch()
+    p {this.name} fetches the ball
+  end
+end
+
+rex = new Dog("Rex", 3)
+rex.speak()
+rex.fetch()
+p {rex.name} is {rex.age} years old
+
+# v5.1: Match
+day = "Monday"
+match day
+  case "Monday"
+    p Start of week
+  end
+  case "Friday"
+    p Weekend coming!
+  end
+  default
+    p Regular day
+  end
+end
+
+# v5.1: String methods
+text = "Hello World"
+p Upper: {text.upper}
+p Lower: {text.lower}
+p Contains: {text.contains("World")}
+p Trim: {"  spaced  ".trim()}
+p Starts: {text.starts("Hello")}
+
+# v5.1: JSON
+data = jsonparse('{"name":"Rex","version":5}')
+p JSON name: {data.name}
+p JSON string: {jsonstring(data)}
+
+# v5.1: Date/Time
+p Today: {today()}
+p Year: {year()}
+p Clock: {clock()}
+
+# v5.1: Import stdlib
+import math as m
+p Pi: {m.pi}
+p Sqrt: {m.sqrt(144)}
+
 print ""
-print "=== All 18 tests passed! ==="`;
+print "=== All 25 tests passed! Rex v5.1 ==="`;
   
   fs.writeFileSync('/tmp/rex_test.rex', testCode);
   console.log(`Running Rex v${VERSION} JS test suite...\n`);
@@ -1311,13 +1917,16 @@ async function repl() {
   const prompt = () => rl.question(buffer ? '...   ' : 'rex> ', (line) => {
     if (line.trim() === 'exit') { rl.close(); return; }
     if (line.trim() === 'help') {
-      console.log('  p Hello        → print Hello (no quotes!)');
-      console.log('  p {x}          → print variable x');
-      console.log('  x = 10         → variable');
-      console.log('  if x > 5       → condition');
-      console.log('  repeat 3       → loop');
-      console.log('  func name()    → function');
-      console.log('  end            → close block');
+      console.log('  p Hello        print Hello (no quotes!)');
+      console.log('  p {x}          print variable x');
+      console.log('  x = 10         variable');
+      console.log('  if x > 5       condition');
+      console.log('  repeat 3       loop');
+      console.log('  func name()    function');
+      console.log('  class Name     define class (v5.1)');
+      console.log('  import math    import stdlib (v5.1)');
+      console.log('  match x        pattern match (v5.1)');
+      console.log('  end            close block');
       prompt();
       return;
     }
@@ -1338,7 +1947,7 @@ async function repl() {
     }
     
     buffer += line + '\n';
-    const blockKeywords = ['if','agar','while','jab','repeat','dohra','loop','each','har','for','func','kaam','function','def','else','warna','try'];
+    const blockKeywords = ['if','agar','while','jab','repeat','dohra','loop','each','har','for','func','kaam','function','def','else','warna','try','class','match'];
     const hasBlockKw = blockKeywords.some(kw => line.split(/\s+/).includes(kw));
     const hasEnd = ['end','khatam','done'].includes(line.split(/\s+/).find(w => ['end','khatam','done'].includes(w)));
     
@@ -1387,9 +1996,10 @@ if (args.length === 0) {
   repl();
 } else if (args[0] === 'test') {
   runTests();
+} else if (args[0] === 'version' || args[0] === '-v') {
+  console.log(`Rex v${VERSION}`);
 } else {
   runFile(args[0]);
 }
 
-// Export for use as a module
 module.exports = { tokenize, Parser, Interpreter, rexwebToHtml, VERSION };
